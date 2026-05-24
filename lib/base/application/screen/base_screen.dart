@@ -19,6 +19,7 @@ sealed class BaseScreen extends StatelessWidget {
     return MultiBlocProvider(
       providers: providers,
       child: context.responsiveValue(mobile: mobile(context), tablet: tablet(context), desktop: desktop(context)),
+
     );
   }
 }
