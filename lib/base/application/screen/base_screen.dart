@@ -32,11 +32,15 @@ abstract class SingleBlocScreen<T extends Bloc> extends BaseScreen {
 }
 
 abstract class MultiBlocScreen extends BaseScreen {
-  final Map<Type, Bloc> blocs;
-  const MultiBlocScreen({super.key, required this.blocs});
+  final List<BlocProvider> _providers;
+
+  MultiBlocScreen({super.key, required List<BlocBase<dynamic>> blocs})
+    : _providers = blocs.map((bloc) => BlocProvider.value(value: bloc)).toList();
 
   @override
-  List<BlocProvider> get providers => blocs.entries
-      .map((e) => BlocProvider(create: (_) => e.value))
-      .toList();
+  List<BlocProvider> get providers => _providers;
+
+  T bloc<T extends BlocBase<Object?>>(BuildContext context) {
+    return context.read<T>();
+  }
 }

@@ -1,5 +1,5 @@
 {
-    "dart.flutterSdkPath": "/home/sezium/Projects/Flutter/scm/EightH/.fvm/versions/stable",
+    "dart.flutterSdkPath": "~/develop/flutter/bin",
     "dart.lineLength": 120,
     "[dart]": {
         "editor.rulers": [
