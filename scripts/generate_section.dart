@@ -1,15 +1,15 @@
 import 'dart:io';
 
-const _reset  = '\x1B[0m';
-const _white  = '\x1B[37m';
-const _green  = '\x1B[32m';
+const _reset = '\x1B[0m';
+const _white = '\x1B[37m';
+const _green = '\x1B[32m';
 const _yellow = '\x1B[33m';
-const _red    = '\x1B[31m';
+const _red = '\x1B[31m';
 
-void printInfo(String msg)    => print('$_white$msg$_reset');
+void printInfo(String msg) => print('$_white$msg$_reset');
 void printSuccess(String msg) => print('$_green$msg$_reset');
 void printWarning(String msg) => print('$_yellow$msg$_reset');
-void printError(String msg)   => print('$_red$msg$_reset');
+void printError(String msg) => print('$_red$msg$_reset');
 
 void main(List<String> args) {
   if (args.isEmpty) {
