@@ -2,11 +2,11 @@ import 'package:$baseDir$/$baseClassesDir$/$applicationDir$/$screenDir$/base_scr
 import 'package:$baseDir$/$sectionsDir$/$foo$/$applicationDir$/$blocDir$/$foo$_bloc.dart';
 import 'package:flutter/material.dart';
 
-class $Foo$Screen extends BaseScreen<$Foo$Bloc> {
+class $Foo$Screen extends SingleBlocScreen<$Foo$Bloc> {
   $Foo$Screen({super.key}) : super(bloc: $Foo$Bloc());
 
   @override
-  Widget phone(BuildContext context) => const Placeholder();
+  Widget mobile(BuildContext context) => const Placeholder();
   @override
   Widget tablet(BuildContext context) => const Placeholder();
   @override
