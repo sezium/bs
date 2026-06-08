@@ -30,7 +30,7 @@ class LoginScreen extends SingleBlocScreen<LoginBloc> {
         }
       },
       builder: (context, state) {
-        final isLoading = state is LoginStateLoading;
+        final isLoading = state.isLoading;
         final errorMessage = switch (state) {
           LoginStateFailure(:final message) => message,
           _ => null,
@@ -64,5 +64,4 @@ class LoginScreen extends SingleBlocScreen<LoginBloc> {
       },
     );
   }
-  
 }

@@ -32,6 +32,12 @@ void main(List<String> args) {
     'blocDir': 'bloc',
     'screenDir': 'screen',
     'repositoryDir': 'repository',
+    'atomsDir': 'atoms',
+    'moleculesDir': 'molecules',
+    'organismsDir': 'organisms',
+    'templatesDir': 'templates',
+    'pagesDir': 'pages',
+    'dependencyDir': 'dependency',
   };
 
   final dirMapping = {
@@ -41,6 +47,13 @@ void main(List<String> args) {
     'bloc': config['blocDir']!,
     'screen': config['screenDir']!,
     'repository': config['repositoryDir']!,
+    'atoms': config['atomsDir']!,
+    'molecules': config['moleculesDir']!,
+    'organisms': config['organismsDir']!,
+    // Remove incorrect "templates_atomic" and "pages_atomic"
+    'templates': config['templatesDir']!,
+    'pages': config['pagesDir']!,
+    'dependency': config['dependencyDir']!, // Add dependency to mapping
   };
 
   final templateDir = Directory('scripts/generate_section');
@@ -56,9 +69,13 @@ void main(List<String> args) {
 
     var relativePath = entity.path.replaceFirst('${templateDir.path}/', '');
 
-    for (final entry in dirMapping.entries) {
-      relativePath = relativePath.replaceAll(entry.key, entry.value);
-    }
+    dirMapping.forEach((key, value) {
+      relativePath = relativePath.replaceAllMapped(
+        RegExp(r'(?<=^|/)' + RegExp.escape(key) + r'(?=/|$)'),
+        (match) => value,
+      );
+    });
+
     relativePath = relativePath.replaceAll('foo', foo);
 
     final targetFile = File('${outputDir.path}/$relativePath');
@@ -73,7 +90,24 @@ void main(List<String> args) {
     printInfo(targetFile.path);
   }
 
-  printSuccess('\nSection "$foo" generated at ${outputDir.path}');
+  final atomicPaths = [
+    'lib/${config['sectionsDir']}/$foo/${config['applicationDir']}/${config['atomsDir']}',
+    'lib/${config['sectionsDir']}/$foo/${config['applicationDir']}/${config['moleculesDir']}',
+    'lib/${config['sectionsDir']}/$foo/${config['applicationDir']}/${config['organismsDir']}',
+    'lib/${config['sectionsDir']}/$foo/${config['applicationDir']}/${config['templatesDir']}',
+    'lib/${config['sectionsDir']}/$foo/${config['applicationDir']}/${config['pagesDir']}',
+    'lib/${config['sectionsDir']}/$foo/${config['applicationDir']}/${config['dependencyDir']}', // add this path for dependency
+  ];
+
+  for (final path in atomicPaths) {
+    final dir = Directory(path);
+    if (!dir.existsSync()) {
+      dir.createSync(recursive: true);
+      printInfo('Created directory: $path');
+    }
+  }
+
+  printSuccess('\nSection "$foo" generated at ${outputDir.path} with Atomic Design structure.');
 }
 
 String _readPackageName() {

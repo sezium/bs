@@ -1,5 +1,9 @@
 sealed class LoginState {
   const LoginState();
+
+  bool get isLoading => this is LoginStateLoading;
+  bool get isEditing => this is LoginStateEditing;
+  bool get isSuccess => this is LoginStateSuccess;
 }
 
 final class LoginStateInit extends LoginState {

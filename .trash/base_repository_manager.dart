@@ -1,7 +1,7 @@
 import 'package:bs/base/repository/base_repository.dart';
 
 abstract class BaseRepositoryManager {
-  BaseRepositoryManager._();
+  const BaseRepositoryManager._();
 
   static final Map<Type, BaseRepository> _repositories = {};
 

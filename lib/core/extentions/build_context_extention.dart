@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-extension ContextExtensionss on BuildContext {
+extension ContextExtension on BuildContext {
   /// The same of [MediaQuery.of(context).size]
   Size get mediaQuerySize => MediaQuery.of(this).size;
 
@@ -118,6 +118,6 @@ extension ContextExtensionss on BuildContext {
     } else if (deviceWidth >= _mobileWidth && mobile != null) {
       return mobile;
     }
-    return mobile!;
+    return Placeholder as T;
   }
 }

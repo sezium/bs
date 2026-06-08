@@ -5,11 +5,10 @@ import 'package:bs/sections/login/domain/repository/login_repository_impl.dart';
 class LoginDependencies extends BaseDependencies {
   LoginDependencies._();
 
-  static final LoginDependencies instance = LoginDependencies._();
-  factory LoginDependencies() => instance;
-
+  static final LoginDependencies _instance = LoginDependencies._();
+  static LoginRepository get repository => _instance.get(LoginRepositoryImpl.new);
 }
 
 mixin LoginDependenciesMixin {
-  LoginRepository get loginRepository => LoginDependencies.instance.get(LoginRepositoryImpl.new);
+  LoginRepository get loginRepository => LoginDependencies.repository;
 }

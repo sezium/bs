@@ -41,7 +41,7 @@ abstract class MultiBlocScreen extends BaseScreen {
   @override
   List<BlocProvider> get providers => _providers;
 
-  T bloc<T extends BlocBase<Object?>>(BuildContext context) {
-    return context.read<T>();
-  }
+  // T bloc<T extends BlocBase<Object?>>(BuildContext context) {
+  //   return context.read<T>();
+  // }
 }

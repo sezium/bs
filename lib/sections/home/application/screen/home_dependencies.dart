@@ -5,11 +5,11 @@ import 'package:bs/sections/home/domain/repository/home_repository_impl.dart';
 class HomeDependencies extends BaseDependencies {
   HomeDependencies._();
 
-  static final HomeDependencies instance = HomeDependencies._();
-  factory HomeDependencies() => instance;
+  static final HomeDependencies _instance = HomeDependencies._();
+  static HomeRepository get repository => _instance.get(HomeRepositoryImpl.new);
 }
 
 mixin HomeDependenciesMixin {
   HomeRepository get homeRepository =>
-      HomeDependencies.instance.get(HomeRepositoryImpl.new);
+      HomeDependencies.repository;
 }
