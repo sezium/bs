@@ -7,9 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 class LoginScreen extends SingleBlocScreen<LoginBloc> {
   LoginScreen({super.key}) : super(bloc: LoginBloc());
-  
-  @override
-  String get route => '/login';
+  static String get route => '/training';
 
   @override
   Widget mobile(BuildContext context) => page(context);

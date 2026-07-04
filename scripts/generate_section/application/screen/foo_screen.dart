@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 class $Foo$Screen extends SingleBlocScreen<$Foo$Bloc> {
   $Foo$Screen({super.key}) : super(bloc: $Foo$Bloc());
+  static String get route => '/$foo$';
 
   @override
   Widget mobile(BuildContext context) => const Placeholder();
@@ -12,6 +13,4 @@ class $Foo$Screen extends SingleBlocScreen<$Foo$Bloc> {
   @override
   Widget desktop(BuildContext context) => const Placeholder();
 
-  @override
-  String get route => '/$foo$';
 }

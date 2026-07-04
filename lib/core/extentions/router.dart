@@ -8,27 +8,16 @@ class AppRouter {
   AppRouter._();
 
   static final GoRouter router = GoRouter(
-    initialLocation: TrainingScreen().route,
+    initialLocation: TrainingScreen().routeName,
     debugLogDiagnostics: true,
     routes: [
-     
       GoRoute(
-        path: LoginScreen().route,
+        path: LoginScreen().routeName,
         builder: (context, state) => LoginScreen(),
       ),
       
     ],
     errorBuilder: (context, state) => const _RouteNotFoundScreen(),
-    redirect: (context, state) {
-      // Esempio: guard di autenticazione
-      // final isLoggedIn = context.read<AuthBloc>().state.isAuthenticated;
-      // final goingToLogin = state.matchedLocation == LoginScreen.route;
-      //
-      // if (!isLoggedIn && !goingToLogin) return LoginScreen.route;
-      // if (isLoggedIn && goingToLogin) return HomeScreen.route;
-
-      return null; // nessun redirect
-    },
   );
 }
 

@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 sealed class BaseScreen extends StatelessWidget {
   const BaseScreen({super.key});
 
-  String get route;
 
   List<BlocProvider> get providers;
 
