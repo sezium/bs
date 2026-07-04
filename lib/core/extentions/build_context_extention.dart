@@ -92,16 +92,16 @@ extension ContextExtension on BuildContext {
   /// get the shortestSide from screen
   double get mediaQueryShortestSide => mediaQuerySize.shortestSide;
 
-  /// True if the shortestSide is smaller than 600p
-  bool get isMobile => (mediaQueryShortestSide < _mobileWidth);
+  /// True if the width is smaller than 600p
+  bool get isMobile => (width < _mobileWidth);
   int get _mobileWidth => 600;
 
-  /// True if the shortestSide is in range [600p, 1000p[
-  bool get isTablet => (mediaQueryShortestSide >= _tabletWidth && mediaQueryShortestSide < _desktopWidth);
+  /// True if the width is in range [600p, 1200p[
+  bool get isTablet => (width >= _tabletWidth && width < _desktopWidth);
   int get _tabletWidth => 900;
 
-  /// True if the current device is larger than 1200p
-  bool get isDesktop => (mediaQueryShortestSide >= _desktopWidth);
+  /// True if the current device width is larger than or equal to 1200p
+  bool get isDesktop => (width >= _desktopWidth);
   int get _desktopWidth => 1200;
 
   /// Returns a specific value according to the screen size
@@ -109,15 +109,13 @@ extension ContextExtension on BuildContext {
   /// [desktop] value. if the device width is higher than  or equal to 600
   /// and less than 1200 return [tablet] value.
   /// in other cases return [mobile] value.
-  T responsiveValue<T>({T? mobile, T? tablet, T? desktop}) {
-    var deviceWidth = mediaQuerySize.shortestSide;
+  T responsiveValue<T>({required T mobile, T? tablet, T? desktop}) {
+    final deviceWidth = width;
     if (deviceWidth >= _desktopWidth && desktop != null) {
       return desktop;
     } else if (deviceWidth >= _tabletWidth && tablet != null) {
       return tablet;
-    } else if (deviceWidth >= _mobileWidth && mobile != null) {
-      return mobile;
     }
-    return Placeholder as T;
+    return mobile;
   }
 }
