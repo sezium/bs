@@ -1,6 +1,6 @@
 import 'package:bs/sections/home/application/bloc/home_event.dart';
 import 'package:bs/sections/home/application/bloc/home_state.dart';
-import 'package:bs/sections/home/application/screen/home_dependencies.dart';
+import 'package:bs/sections/home/dependency/home_dependencies_mixin.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class HomeBloc extends Bloc<HomeEvent, HomeState> with HomeDependenciesMixin {

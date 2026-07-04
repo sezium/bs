@@ -1,20 +1,19 @@
+import 'package:bs/base/domain/repository/base_repository_manager.dart';
 import 'package:bs/sections/login/application/bloc/login_event.dart';
 import 'package:bs/sections/login/application/bloc/login_state.dart';
-import 'package:bs/sections/login/application/screen/login_dependencies.dart';
+import 'package:bs/sections/login/domain/repository/login_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class LoginBloc extends Bloc<LoginEvent, LoginState> with LoginDependenciesMixin {
-  LoginBloc()
-      : super(const LoginStateInit()) {
-    on<LoginEventInit>(_onInit);
+class LoginBloc extends Bloc<LoginEvent, LoginState> {
+  LoginBloc({LoginRepository? loginRepository})
+    : _loginRepository = loginRepository ?? BaseRepositoryManager.get<LoginRepository>(),
+      super(const LoginStateInit()) {
     on<LoginEventEmailChanged>(_onEmailChanged);
     on<LoginEventPasswordChanged>(_onPasswordChanged);
     on<LoginEventSubmit>(_onSubmit);
   }
 
-  void _onInit(LoginEventInit event, Emitter<LoginState> emit) {
-    emit(const LoginStateInit());
-  }
+  final LoginRepository _loginRepository;
 
   void _onEmailChanged(LoginEventEmailChanged event, Emitter<LoginState> emit) {
     final form = _formData;
@@ -48,9 +47,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> with LoginDependenciesMixin
     emit(LoginStateLoading(email: form.email, password: form.password));
 
     try {
-      await Future<void>(() {
-        loginRepository.getUser(form.email, form.password);
-      });
+      await _loginRepository.login(form.email, form.password);
       emit(const LoginStateSuccess());
     } catch (error) {
       emit(
@@ -80,5 +77,4 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> with LoginDependenciesMixin
       _ => (email: '', password: ''),
     };
   }
-
 }

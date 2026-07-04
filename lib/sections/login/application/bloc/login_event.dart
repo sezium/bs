@@ -2,8 +2,6 @@ sealed class LoginEvent {
   const LoginEvent();
 }
 
-final class LoginEventInit extends LoginEvent {}
-
 final class LoginEventEmailChanged extends LoginEvent {
   const LoginEventEmailChanged({required this.email});
   final String email;

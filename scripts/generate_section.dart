@@ -108,6 +108,9 @@ void main(List<String> args) {
   }
 
   printSuccess('\nSection "$foo" generated at ${outputDir.path} with Atomic Design structure.');
+  printWarning(
+    'Remember to register $Foo$Repository in lib/base/domain/repository/repository_registry.dart',
+  );
 }
 
 String _readPackageName() {

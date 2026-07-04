@@ -39,3 +39,24 @@ final class LoginStateFailure extends LoginState {
   final String email;
   final String password;
 }
+
+extension LoginStateForm on LoginState {
+  String get email => switch (this) {
+    LoginStateEditing(:final email) => email,
+    LoginStateLoading(:final email) => email,
+    LoginStateFailure(:final email) => email,
+    _ => '',
+  };
+
+  String get password => switch (this) {
+    LoginStateEditing(:final password) => password,
+    LoginStateLoading(:final password) => password,
+    LoginStateFailure(:final password) => password,
+    _ => '',
+  };
+
+  String? get errorMessage => switch (this) {
+    LoginStateFailure(:final message) => message,
+    _ => null,
+  };
+}
