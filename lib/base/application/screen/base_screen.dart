@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 sealed class BaseScreen extends StatelessWidget {
   const BaseScreen({super.key});
 
+  String get route;
+
   List<BlocProvider> get providers;
 
   @protected
@@ -18,8 +20,11 @@ sealed class BaseScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: providers,
-      child: context.responsiveValue(mobile: mobile(context), tablet: tablet(context), desktop: desktop(context)),
-
+      child: context.responsiveValue(
+        mobile: mobile(context),
+        tablet: tablet(context),
+        desktop: desktop(context),
+      ),
     );
   }
 }
@@ -36,12 +41,8 @@ abstract class MultiBlocScreen extends BaseScreen {
   final List<BlocProvider> _providers;
 
   MultiBlocScreen({super.key, required List<BlocBase<dynamic>> blocs})
-    : _providers = blocs.map((bloc) => BlocProvider.value(value: bloc)).toList();
+      : _providers = blocs.map((bloc) => BlocProvider.value(value: bloc)).toList();
 
   @override
   List<BlocProvider> get providers => _providers;
-
-  // T bloc<T extends BlocBase<Object?>>(BuildContext context) {
-  //   return context.read<T>();
-  // }
 }

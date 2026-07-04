@@ -10,7 +10,6 @@ void printInfo(String msg) => print('$_white$msg$_reset');
 void printSuccess(String msg) => print('$_green$msg$_reset');
 void printWarning(String msg) => print('$_yellow$msg$_reset');
 void printError(String msg) => print('$_red$msg$_reset');
-
 void main(List<String> args) {
   if (args.isEmpty) {
     printError('Usage: dart scripts/generate_section.dart <section_name>');
@@ -32,12 +31,9 @@ void main(List<String> args) {
     'blocDir': 'bloc',
     'screenDir': 'screen',
     'repositoryDir': 'repository',
-    'atomsDir': 'atoms',
-    'moleculesDir': 'molecules',
-    'organismsDir': 'organisms',
-    'templatesDir': 'templates',
     'pagesDir': 'pages',
     'dependencyDir': 'dependency',
+    'uiDir': 'ui',
   };
 
   final dirMapping = {
@@ -45,15 +41,10 @@ void main(List<String> args) {
     'data': config['dataDir']!,
     'application': config['applicationDir']!,
     'bloc': config['blocDir']!,
+    'ui': config['uiDir']!,
     'screen': config['screenDir']!,
     'repository': config['repositoryDir']!,
-    'atoms': config['atomsDir']!,
-    'molecules': config['moleculesDir']!,
-    'organisms': config['organismsDir']!,
-    // Remove incorrect "templates_atomic" and "pages_atomic"
-    'templates': config['templatesDir']!,
-    'pages': config['pagesDir']!,
-    'dependency': config['dependencyDir']!, // Add dependency to mapping
+    'dependency': config['dependencyDir']!,
   };
 
   final templateDir = Directory('scripts/generate_section');
@@ -64,19 +55,22 @@ void main(List<String> args) {
     exit(1);
   }
 
-  for (final entity in templateDir.listSync(recursive: true)) {
-    if (entity is! File) continue;
-
-    var relativePath = entity.path.replaceFirst('${templateDir.path}/', '');
-
+  String remapPath(String relativePath) {
     dirMapping.forEach((key, value) {
       relativePath = relativePath.replaceAllMapped(
         RegExp(r'(?<=^|/)' + RegExp.escape(key) + r'(?=/|$)'),
         (match) => value,
       );
     });
+    return relativePath.replaceAll('foo', foo);
+  }
 
-    relativePath = relativePath.replaceAll('foo', foo);
+  for (final entity in templateDir.listSync(recursive: true)) {
+    if (entity is! File) continue;
+
+    final relativePath = remapPath(
+      entity.path.replaceFirst('${templateDir.path}/', ''),
+    );
 
     final targetFile = File('${outputDir.path}/$relativePath');
     targetFile.parent.createSync(recursive: true);
@@ -90,27 +84,19 @@ void main(List<String> args) {
     printInfo(targetFile.path);
   }
 
-  final atomicPaths = [
-    'lib/${config['sectionsDir']}/$foo/${config['applicationDir']}/${config['atomsDir']}',
-    'lib/${config['sectionsDir']}/$foo/${config['applicationDir']}/${config['moleculesDir']}',
-    'lib/${config['sectionsDir']}/$foo/${config['applicationDir']}/${config['organismsDir']}',
-    'lib/${config['sectionsDir']}/$foo/${config['applicationDir']}/${config['templatesDir']}',
-    'lib/${config['sectionsDir']}/$foo/${config['applicationDir']}/${config['pagesDir']}',
-    'lib/${config['sectionsDir']}/$foo/${config['applicationDir']}/${config['dependencyDir']}', // add this path for dependency
-  ];
+  for (final entity in templateDir.listSync(recursive: true)) {
+    if (entity is! Directory) continue;
 
-  for (final path in atomicPaths) {
-    final dir = Directory(path);
-    if (!dir.existsSync()) {
-      dir.createSync(recursive: true);
-      printInfo('Created directory: $path');
+    final relativePath = remapPath(
+      entity.path.replaceFirst('${templateDir.path}/', ''),
+    );
+
+    final targetDir = Directory('${outputDir.path}/$relativePath');
+    if (!targetDir.existsSync()) {
+      targetDir.createSync(recursive: true);
+      printInfo('${targetDir.path}/ (empty dir)');
     }
   }
-
-  printSuccess('\nSection "$foo" generated at ${outputDir.path} with Atomic Design structure.');
-  printWarning(
-    'Remember to register $Foo$Repository in lib/base/domain/repository/repository_registry.dart',
-  );
 }
 
 String _readPackageName() {

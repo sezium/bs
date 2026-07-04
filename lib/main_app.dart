@@ -1,4 +1,4 @@
-import 'package:bs/sections/login/application/screen/login_screen.dart';
+import 'package:bs/sections/training/application/screen/training_screen.dart';
 import 'package:flutter/material.dart';
 
 class MainApp extends StatelessWidget {
@@ -7,7 +7,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: LoginScreen(),
+      home: TrainingScreen(),
     );
   }
 }

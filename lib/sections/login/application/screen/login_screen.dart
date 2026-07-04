@@ -1,5 +1,4 @@
 import 'package:bs/base/application/screen/base_screen.dart';
-import 'package:bs/sections/home/application/screen/home_screen.dart';
 import 'package:bs/sections/login/application/bloc/login_bloc.dart';
 import 'package:bs/sections/login/application/bloc/login_event.dart';
 import 'package:bs/sections/login/application/bloc/login_state.dart';
@@ -8,6 +7,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 class LoginScreen extends SingleBlocScreen<LoginBloc> {
   LoginScreen({super.key}) : super(bloc: LoginBloc());
+  
+  @override
+  String get route => '/login';
 
   @override
   Widget mobile(BuildContext context) => page(context);
@@ -24,7 +26,8 @@ class LoginScreen extends SingleBlocScreen<LoginBloc> {
           case LoginStateFailure(:final message):
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
           case LoginStateSuccess():
-            Navigator.pushReplacement<void, void>(context, MaterialPageRoute<void>(builder: (_) => HomeScreen()));
+          // context.go(HomeScreen.route);
+            // Navigator.pushReplacement<void, void>(context, MaterialPageRoute<void>(builder: (_) => HomeScreen()));
           default:
             break;
         }
@@ -64,4 +67,6 @@ class LoginScreen extends SingleBlocScreen<LoginBloc> {
       },
     );
   }
+  
+  
 }

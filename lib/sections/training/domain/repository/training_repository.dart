@@ -1,3 +1,3 @@
 import 'package:bs/base/domain/repository/base_repository.dart';
 
-abstract class ProfileRepository extends BaseRepository {}
+abstract class TrainingRepository extends BaseRepository {}

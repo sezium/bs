@@ -12,4 +12,6 @@ class $Foo$Screen extends SingleBlocScreen<$Foo$Bloc> {
   @override
   Widget desktop(BuildContext context) => const Placeholder();
 
+  @override
+  String get route => '/$foo$';
 }
