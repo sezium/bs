@@ -8,11 +8,11 @@ class AppRouter {
   AppRouter._();
 
   static final GoRouter router = GoRouter(
-    initialLocation: TrainingScreen().routeName,
+    initialLocation: TrainingScreen.route,
     debugLogDiagnostics: true,
     routes: [
       GoRoute(
-        path: LoginScreen().routeName,
+        path: LoginScreen.route,
         builder: (context, state) => LoginScreen(),
       ),
       
