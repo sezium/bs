@@ -5,6 +5,7 @@ import 'package:bs/sections/cards/dependency/cards_dependencies_mixin.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 const int _readyRoomDuration = 3;
+const int _deckSize = 52;
 
 final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependenciesMixin {
   Timer? _countdownTimer;
@@ -23,6 +24,7 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
     on<CardsEventPlaceCard>(_onPlaceCard);
     on<CardsEventReturnCardToDeck>(_onReturnCardToDeck);
     on<CardsEventConfirmRecall>(_onConfirmRecall);
+    on<CardsEventFinishRecall>(_onFinishRecall);
   }
 
   void _onInit(CardsEventInit event, Emitter<CardsState> emit) {
@@ -30,9 +32,7 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
   }
 
   void _onStartReadyRoom(CardsEventStartReadyRoom event, Emitter<CardsState> emit) {
-    emit(const CardsStateSuccess(
-      phase: CardsPhaseReadyRoom(secondsRemaining: _readyRoomDuration),
-    ));
+    emit(const CardsStateSuccess(phase: CardsPhaseReadyRoom(secondsRemaining: _readyRoomDuration)));
 
     _countdownTimer?.cancel();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -51,21 +51,15 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
       _countdownTimer?.cancel();
       add(const CardsEventReadyRoomFinished());
     } else {
-      emit(CardsStateSuccess(
-        phase: CardsPhaseReadyRoom(secondsRemaining: remaining),
-      ));
+      emit(CardsStateSuccess(phase: CardsPhaseReadyRoom(secondsRemaining: remaining)));
     }
   }
 
   void _onReadyRoomFinished(CardsEventReadyRoomFinished event, Emitter<CardsState> emit) {
-    final sequence = List.generate(52, (i) => i)..shuffle();
+    final sequence = List.generate(_deckSize, (i) => i)..shuffle();
 
     emit(CardsStateSuccess(
-      phase: CardsPhasePlaying(
-        cardSequence: sequence,
-        currentIndex: 0,
-        recallSecondsElapsed: 0,
-      ),
+      phase: CardsPhasePlaying(cardSequence: sequence, currentIndex: 0, recallSecondsElapsed: 0),
     ));
 
     _recallTimer?.cancel();
@@ -110,15 +104,11 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
     final nextIndex = phase.currentIndex + 1;
 
     if (nextIndex >= phase.cardSequence.length) {
-      emit(CardsStateSuccess(
-        phase: CardsPhaseRecall(
-          originalSequence: phase.cardSequence,
-          deck: List.generate(52, (i) => i),
-          placedSlots: List<int?>.filled(52, null),
-          recallSecondsElapsed: phase.recallSecondsElapsed,
-          submitted: false,
-        ),
-      ));
+      _emitRecallPhase(
+        emit,
+        originalSequence: phase.cardSequence,
+        recallSecondsElapsed: phase.recallSecondsElapsed,
+      );
     } else {
       emit(CardsStateSuccess(
         phase: CardsPhasePlaying(
@@ -165,12 +155,27 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
     if (current is! CardsStateSuccess || current.phase is! CardsPhasePlaying) return;
 
     final phase = current.phase as CardsPhasePlaying;
+    _emitRecallPhase(
+      emit,
+      originalSequence: phase.cardSequence,
+      recallSecondsElapsed: phase.recallSecondsElapsed,
+    );
+  }
+
+  /// Fabbrica comune per entrare in `CardsPhaseRecall` con mazzo pieno e
+  /// slot vuoti. Prima questa emissione era duplicata identica in
+  /// `_onNextCard` e `_onSkipPlaying`.
+  void _emitRecallPhase(
+    Emitter<CardsState> emit, {
+    required List<int> originalSequence,
+    required int recallSecondsElapsed,
+  }) {
     emit(CardsStateSuccess(
       phase: CardsPhaseRecall(
-        originalSequence: phase.cardSequence,
-        deck: List.generate(52, (i) => i),
-        placedSlots: List<int?>.filled(52, null),
-        recallSecondsElapsed: phase.recallSecondsElapsed,
+        originalSequence: originalSequence,
+        deck: List.generate(_deckSize, (i) => i),
+        placedSlots: List<int?>.filled(_deckSize, null),
+        recallSecondsElapsed: recallSecondsElapsed,
         submitted: false,
       ),
     ));
@@ -240,6 +245,20 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
         recallSecondsElapsed: phase.recallSecondsElapsed,
         submitted: true,
       ),
+    ));
+  }
+
+  /// Fix: prima non esisteva alcun handler che portasse a
+  /// `CardsPhaseFinished`. La UI chiamava `context.pop()` invece di
+  /// concludere la sessione mostrando il tempo totale di recall.
+  void _onFinishRecall(CardsEventFinishRecall event, Emitter<CardsState> emit) {
+    final current = state;
+    if (current is! CardsStateSuccess || current.phase is! CardsPhaseRecall) return;
+    final phase = current.phase as CardsPhaseRecall;
+    if (!phase.submitted) return;
+
+    emit(CardsStateSuccess(
+      phase: CardsPhaseFinished(totalRecallSeconds: phase.recallSecondsElapsed),
     ));
   }
 

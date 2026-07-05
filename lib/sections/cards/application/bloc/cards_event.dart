@@ -52,3 +52,12 @@ final class CardsEventReturnCardToDeck extends CardsEvent {
 final class CardsEventConfirmRecall extends CardsEvent {
   const CardsEventConfirmRecall();
 }
+
+/// Nuovo: termina la sessione dopo la conferma del recall e porta lo stato
+/// a [CardsPhaseFinished]. Prima non esisteva nessun evento che facesse
+/// questa transizione: il tasto "End" in `_RecallView` chiamava
+/// `context.pop()` direttamente, uscendo dalla schermata invece di mostrare
+/// la fase "Finished" con il tempo totale.
+final class CardsEventFinishRecall extends CardsEvent {
+  const CardsEventFinishRecall();
+}

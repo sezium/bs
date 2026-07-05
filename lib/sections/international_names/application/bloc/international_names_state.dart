@@ -1,20 +1,20 @@
-sealed class International_namesState {
-  const International_namesState();
+sealed class InternationalNamesState {
+  const InternationalNamesState();
 }
 
-final class International_namesStateInit extends International_namesState {
-  const International_namesStateInit();
+final class InternationalNamesStateInit extends InternationalNamesState {
+  const InternationalNamesStateInit();
 }
 
-final class International_namesStateLoading extends International_namesState {
-  const International_namesStateLoading();
+final class InternationalNamesStateLoading extends InternationalNamesState {
+  const InternationalNamesStateLoading();
 }
 
-final class International_namesStateSuccess extends International_namesState {
-  const International_namesStateSuccess();
+final class InternationalNamesStateSuccess extends InternationalNamesState {
+  const InternationalNamesStateSuccess();
 }
 
-final class International_namesStateFailure extends International_namesState {
-  const International_namesStateFailure({required this.message});
+final class InternationalNamesStateFailure extends InternationalNamesState {
+  const InternationalNamesStateFailure({required this.message});
   final String message;
 }
