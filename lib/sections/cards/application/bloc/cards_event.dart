@@ -37,3 +37,18 @@ final class CardsEventRecallTick extends CardsEvent {
 final class CardsEventSkipPlaying extends CardsEvent {
   const CardsEventSkipPlaying();
 }
+
+final class CardsEventPlaceCard extends CardsEvent {
+  const CardsEventPlaceCard({required this.card, required this.slotIndex});
+  final int card;
+  final int slotIndex;
+}
+
+final class CardsEventReturnCardToDeck extends CardsEvent {
+  const CardsEventReturnCardToDeck({required this.slotIndex});
+  final int slotIndex;
+}
+
+final class CardsEventConfirmRecall extends CardsEvent {
+  const CardsEventConfirmRecall();
+}

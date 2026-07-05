@@ -20,6 +20,9 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
     on<CardsEventRestartSequence>(_onRestartSequence);
     on<CardsEventRecallTick>(_onRecallTick);
     on<CardsEventSkipPlaying>(_onSkipPlaying);
+    on<CardsEventPlaceCard>(_onPlaceCard);
+    on<CardsEventReturnCardToDeck>(_onReturnCardToDeck);
+    on<CardsEventConfirmRecall>(_onConfirmRecall);
   }
 
   void _onInit(CardsEventInit event, Emitter<CardsState> emit) {
@@ -73,16 +76,30 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
 
   void _onRecallTick(CardsEventRecallTick event, Emitter<CardsState> emit) {
     final current = state;
-    if (current is! CardsStateSuccess || current.phase is! CardsPhasePlaying) return;
+    if (current is! CardsStateSuccess) return;
+    final phase = current.phase;
 
-    final phase = current.phase as CardsPhasePlaying;
-    emit(CardsStateSuccess(
-      phase: CardsPhasePlaying(
-        cardSequence: phase.cardSequence,
-        currentIndex: phase.currentIndex,
-        recallSecondsElapsed: phase.recallSecondsElapsed + 1,
-      ),
-    ));
+    if (phase is CardsPhasePlaying) {
+      emit(CardsStateSuccess(
+        phase: CardsPhasePlaying(
+          cardSequence: phase.cardSequence,
+          currentIndex: phase.currentIndex,
+          recallSecondsElapsed: phase.recallSecondsElapsed + 1,
+        ),
+      ));
+    } else if (phase is CardsPhaseRecall && !phase.submitted) {
+      emit(CardsStateSuccess(
+        phase: CardsPhaseRecall(
+          originalSequence: phase.originalSequence,
+          deck: phase.deck,
+          placedSlots: phase.placedSlots,
+          recallSecondsElapsed: phase.recallSecondsElapsed + 1,
+          submitted: false,
+        ),
+      ));
+    } else {
+      _recallTimer?.cancel();
+    }
   }
 
   void _onNextCard(CardsEventNextCard event, Emitter<CardsState> emit) {
@@ -93,9 +110,14 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
     final nextIndex = phase.currentIndex + 1;
 
     if (nextIndex >= phase.cardSequence.length) {
-      _recallTimer?.cancel();
       emit(CardsStateSuccess(
-        phase: CardsPhaseFinished(totalRecallSeconds: phase.recallSecondsElapsed),
+        phase: CardsPhaseRecall(
+          originalSequence: phase.cardSequence,
+          deck: List.generate(52, (i) => i),
+          placedSlots: List<int?>.filled(52, null),
+          recallSecondsElapsed: phase.recallSecondsElapsed,
+          submitted: false,
+        ),
       ));
     } else {
       emit(CardsStateSuccess(
@@ -143,9 +165,81 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
     if (current is! CardsStateSuccess || current.phase is! CardsPhasePlaying) return;
 
     final phase = current.phase as CardsPhasePlaying;
-    _recallTimer?.cancel();
     emit(CardsStateSuccess(
-      phase: CardsPhaseFinished(totalRecallSeconds: phase.recallSecondsElapsed),
+      phase: CardsPhaseRecall(
+        originalSequence: phase.cardSequence,
+        deck: List.generate(52, (i) => i),
+        placedSlots: List<int?>.filled(52, null),
+        recallSecondsElapsed: phase.recallSecondsElapsed,
+        submitted: false,
+      ),
+    ));
+  }
+
+  void _onPlaceCard(CardsEventPlaceCard event, Emitter<CardsState> emit) {
+    final current = state;
+    if (current is! CardsStateSuccess || current.phase is! CardsPhaseRecall) return;
+    final phase = current.phase as CardsPhaseRecall;
+    if (phase.submitted) return;
+    if (phase.placedSlots[event.slotIndex] != null) return;
+    if (!phase.deck.contains(event.card)) return;
+
+    final newDeck = List<int>.from(phase.deck)..remove(event.card);
+    final newSlots = List<int?>.from(phase.placedSlots);
+    newSlots[event.slotIndex] = event.card;
+
+    emit(CardsStateSuccess(
+      phase: CardsPhaseRecall(
+        originalSequence: phase.originalSequence,
+        deck: newDeck,
+        placedSlots: newSlots,
+        recallSecondsElapsed: phase.recallSecondsElapsed,
+        submitted: false,
+      ),
+    ));
+  }
+
+  void _onReturnCardToDeck(CardsEventReturnCardToDeck event, Emitter<CardsState> emit) {
+    final current = state;
+    if (current is! CardsStateSuccess || current.phase is! CardsPhaseRecall) return;
+    final phase = current.phase as CardsPhaseRecall;
+    if (phase.submitted) return;
+
+    final card = phase.placedSlots[event.slotIndex];
+    if (card == null) return;
+
+    final newSlots = List<int?>.from(phase.placedSlots);
+    newSlots[event.slotIndex] = null;
+    final newDeck = List<int>.from(phase.deck)
+      ..add(card)
+      ..sort();
+
+    emit(CardsStateSuccess(
+      phase: CardsPhaseRecall(
+        originalSequence: phase.originalSequence,
+        deck: newDeck,
+        placedSlots: newSlots,
+        recallSecondsElapsed: phase.recallSecondsElapsed,
+        submitted: false,
+      ),
+    ));
+  }
+
+  void _onConfirmRecall(CardsEventConfirmRecall event, Emitter<CardsState> emit) {
+    final current = state;
+    if (current is! CardsStateSuccess || current.phase is! CardsPhaseRecall) return;
+    final phase = current.phase as CardsPhaseRecall;
+
+    _recallTimer?.cancel();
+
+    emit(CardsStateSuccess(
+      phase: CardsPhaseRecall(
+        originalSequence: phase.originalSequence,
+        deck: phase.deck,
+        placedSlots: phase.placedSlots,
+        recallSecondsElapsed: phase.recallSecondsElapsed,
+        submitted: true,
+      ),
     ));
   }
 

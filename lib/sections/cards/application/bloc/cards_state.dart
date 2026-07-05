@@ -44,3 +44,18 @@ final class CardsPhaseFinished extends CardsPhase {
   const CardsPhaseFinished({required this.totalRecallSeconds});
   final int totalRecallSeconds;
 }
+
+final class CardsPhaseRecall extends CardsPhase {
+  const CardsPhaseRecall({
+    required this.originalSequence,
+    required this.deck,
+    required this.placedSlots,
+    required this.recallSecondsElapsed,
+    required this.submitted,
+  });
+  final List<int> originalSequence;
+  final List<int> deck;
+  final List<int?> placedSlots;
+  final int recallSecondsElapsed;
+  final bool submitted;
+}
