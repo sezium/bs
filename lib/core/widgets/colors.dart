@@ -12,5 +12,6 @@ sealed class BsColors {
   static Color get grey => const Color(0xFFACACAC);
   static Color get button => const Color.fromARGB(255, 0, 129, 235);
   static Color get overlay => const Color.fromARGB(255, 244, 244, 244);
+  static Color get transparent => const Color(0x00000000);
   
 }

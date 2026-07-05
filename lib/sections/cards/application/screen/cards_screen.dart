@@ -29,7 +29,7 @@ class CardsScreen extends SingleBlocScreen<CardsBloc> {
                     imagePath: 'long/event_cards_long.png',
                     color: BsColors.red,
                   ),
-                CardsStateLoading() => const Center(child: CircularProgressIndicator()),
+                CardsStateLoading() => Center(child: CircularProgressIndicator(color: BsColors.red)),
                 CardsStateFailure(:final message) => _FailureView(message: message),
                 CardsStateSuccess(:final phase) => switch (phase) {
                     CardsPhaseReadyRoom(:final secondsRemaining) => _ReadyRoomView(
@@ -297,8 +297,6 @@ class _PlayingViewState extends State<_PlayingView> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Warm-up invisibile: costruisce tutte le carte una volta,
-        // così la cache di flutter_svg è calda quando mostriamo la vista reale.
         Offstage(
           offstage: true,
           child: Column(
@@ -309,67 +307,180 @@ class _PlayingViewState extends State<_PlayingView> {
           ),
         ),
         if (!_assetsReady)
-          const Center(child: CircularProgressIndicator())
+          Center(child: CircularProgressIndicator(color: BsColors.red))
         else
           _buildContent(),
       ],
     );
   }
 
-  Widget _buildContent() {
-    final card = widget.cardSequence[widget.currentIndex];
-    final isFirst = widget.currentIndex == 0;
+Widget _buildContent() {
+  final card = widget.cardSequence[widget.currentIndex];
+  final isFirst = widget.currentIndex == 0;
 
-    return SizedBox.expand(
-      child: Column(
-        children: [
-          HighlightBarPhasePlaying(
-            secondsElapsed: widget.secondsElapsed,
-            onSkip: widget.onSkip,
-            color: BsColors.red,
-            title: widget.title,
-          ),
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Card ${widget.currentIndex + 1} / ${widget.cardSequence.length}',
-                    style: GoogleFonts.lato(fontSize: 16, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    key: ValueKey('card-box-$card'),
-                    width: 200,
-                    height: 300,
-                    child: SvgPicture.asset('cards/card$card.svg', width: 200, height: 300),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+  return SizedBox.expand(
+    child: Column(
+      children: [
+        HighlightBarPhasePlaying(
+          secondsElapsed: widget.secondsElapsed,
+          onSkip: widget.onSkip,
+          color: BsColors.red,
+          title: widget.title,
+        ),
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                bsButtonIcon(icon: Icons.restart_alt, color: BsColors.red, onTap: widget.onRestart),
-                const SizedBox(width: 12),
-                bsButtonIcon(
-                  icon: Icons.arrow_back,
-                  color: BsColors.red,
-                  onTap: isFirst ? () {} : widget.onPrevious,
+                Text(
+                  'Card ${widget.currentIndex + 1} / ${widget.cardSequence.length}',
+                  style: GoogleFonts.lato(fontSize: 16, color: Colors.grey),
                 ),
-                const SizedBox(width: 12),
-                bsButtonIcon(icon: Icons.arrow_forward, color: BsColors.red, onTap: widget.onNext),
+                const SizedBox(height: 24),
+                SizedBox(
+                  key: ValueKey('card-box-$card'),
+                  width: 200,
+                  height: 300,
+                  child: SvgPicture.asset('cards/card$card.svg', width: 200, height: 300),
+                ),
               ],
             ),
           ),
+        ),
+        _buildOverlappingRow(),
+        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              bsButtonIcon(icon: Icons.restart_alt, color: BsColors.red, onTap: widget.onRestart),
+              const SizedBox(width: 12),
+              bsButtonIcon(
+                icon: Icons.arrow_back,
+                color: BsColors.red,
+                onTap: isFirst ? () {} : widget.onPrevious,
+              ),
+              const SizedBox(width: 12),
+              bsButtonIcon(icon: Icons.arrow_forward, color: BsColors.red, onTap: widget.onNext),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildOverlappingRow() {
+  const double thumbWidth = 80;
+  const double thumbHeight = 110;
+  const double selectedWidth = 80;
+  const double selectedHeight = 110;
+  const double overlap = 60; // quanto si sovrappongono le carte
+  const double step = thumbWidth - overlap; // avanzamento orizzontale per carta
+  const double rowSpacing = 12; // spazio verticale tra le righe
+
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final maxWidth = constraints.maxWidth;
+
+      // Quante carte entrano in una riga, dato lo step di overlap.
+      // La prima carta occupa thumbWidth, le successive aggiungono `step`.
+      int cardsPerRow = ((maxWidth - thumbWidth) / step).floor() + 1;
+      if (cardsPerRow < 1) cardsPerRow = 1;
+
+      // Spezza cardSequence in chunk da `cardsPerRow` elementi ciascuno,
+      // mantenendo gli indici assoluti per sapere quale card è selezionata.
+      final rows = <List<int>>[];
+      for (var i = 0; i < widget.cardSequence.length; i += cardsPerRow) {
+        final end = (i + cardsPerRow < widget.cardSequence.length)
+            ? i + cardsPerRow
+            : widget.cardSequence.length;
+        rows.add(List.generate(end - i, (j) => i + j));
+      }
+
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final rowIndices in rows) ...[
+            _buildSingleOverlappingRow(
+              rowIndices: rowIndices,
+              thumbWidth: thumbWidth,
+              thumbHeight: thumbHeight,
+              selectedWidth: selectedWidth,
+              selectedHeight: selectedHeight,
+              overlap: overlap,
+            ),
+            if (rowIndices != rows.last) const SizedBox(height: rowSpacing),
+          ],
         ],
+      );
+    },
+  );
+}
+
+Widget _buildSingleOverlappingRow({
+  required List<int> rowIndices,
+  required double thumbWidth,
+  required double thumbHeight,
+  required double selectedWidth,
+  required double selectedHeight,
+  required double overlap,
+}) {
+  final step = thumbWidth - overlap;
+  final count = rowIndices.length;
+  final totalWidth = thumbWidth + (count - 1) * step;
+
+  return SizedBox(
+    height: selectedHeight + 10,
+    child: Center(
+      child: SizedBox(
+        width: totalWidth + (selectedWidth - thumbWidth),
+        child: Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
+          children: List.generate(count, (posInRow) {
+            final index = rowIndices[posInRow];
+            final isSelected = index == widget.currentIndex;
+            final thumbCard = widget.cardSequence[index];
+            final left = posInRow * step;
+
+            return Positioned(
+              left: left,
+              top: isSelected ? 0 : 5, // rialzo
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 0),
+                curve: Curves.easeOut,
+                width: isSelected ? selectedWidth : thumbWidth,
+                height: isSelected ? selectedHeight : thumbHeight,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isSelected ? BsColors.red : BsColors.transparent,
+                    width: isSelected ? 1 : 1,
+                  ),
+                  boxShadow: [
+                    // BoxShadow(
+                    //   color: Colors.black.withValues(alpha: isSelected ? 0.12 : 0.12),
+                    //   blurRadius: isSelected ? 3 : 3,
+                    //   offset: const Offset(0, 2),
+                    // ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(0),
+                child: SvgPicture.asset(
+                  'cards/card$thumbCard.svg',
+                  fit: BoxFit.contain,
+                ),
+              ),
+            );
+          }),
+        ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class _FinishedView extends StatelessWidget {
