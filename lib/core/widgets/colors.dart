@@ -5,6 +5,7 @@ sealed class BsColors {
   static Color get yellow => const Color(0xFFFFE600);
   static Color get olive => const Color.fromARGB(255, 102, 142, 0);
   static Color get green => const Color.fromARGB(255, 0, 142, 5);
+  static Color get correct => const Color.fromARGB(255, 0, 255, 0);
   static Color get blue => const Color.fromARGB(255, 0, 129, 235);
   static Color get purple => const Color.fromARGB(255, 217, 0, 255);
   static Color get white => const Color(0xFFFFFFFF);

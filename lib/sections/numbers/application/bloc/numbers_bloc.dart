@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:bs/sections/numbers/application/bloc/numbers_event.dart';
 import 'package:bs/sections/numbers/application/bloc/numbers_state.dart';
 import 'package:bs/sections/numbers/dependency/numbers_dependencies_mixin.dart';
@@ -6,12 +7,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 const int _readyRoomDuration = 3;
 
-/// Quanti numeri a due cifre compongono la sequenza/il mazzo: 00..99.
+/// Quanti numeri compongono la sequenza da memorizzare.
 const int _numberCount = 100;
 
 final class NumbersBloc extends Bloc<NumbersEvent, NumbersState> with NumbersDependenciesMixin {
   Timer? _countdownTimer;
   Timer? _recallTimer;
+  final Random _random = Random();
 
   NumbersBloc() : super(const NumbersStateInit()) {
     on<NumbersEventInit>(_onInit);
@@ -24,7 +26,6 @@ final class NumbersBloc extends Bloc<NumbersEvent, NumbersState> with NumbersDep
     on<NumbersEventRecallTick>(_onRecallTick);
     on<NumbersEventSkipPlaying>(_onSkipPlaying);
     on<NumbersEventPlaceNumber>(_onPlaceNumber);
-    on<NumbersEventReturnNumberToDeck>(_onReturnNumberToDeck);
     on<NumbersEventConfirmRecall>(_onConfirmRecall);
     on<NumbersEventFinishRecall>(_onFinishRecall);
   }
@@ -58,7 +59,8 @@ final class NumbersBloc extends Bloc<NumbersEvent, NumbersState> with NumbersDep
   }
 
   void _onReadyRoomFinished(NumbersEventReadyRoomFinished event, Emitter<NumbersState> emit) {
-    final sequence = List.generate(_numberCount, (i) => i)..shuffle();
+    // Numeri casuali indipendenti: possono ripetersi, non è una permutazione di 0..99.
+    final sequence = List.generate(_numberCount, (_) => _random.nextInt(100));
 
     emit(NumbersStateSuccess(
       phase: NumbersPhasePlaying(numberSequence: sequence, currentIndex: 0, recallSecondsElapsed: 0),
@@ -87,7 +89,6 @@ final class NumbersBloc extends Bloc<NumbersEvent, NumbersState> with NumbersDep
       emit(NumbersStateSuccess(
         phase: NumbersPhaseRecall(
           originalSequence: phase.originalSequence,
-          deck: phase.deck,
           placedSlots: phase.placedSlots,
           recallSecondsElapsed: phase.recallSecondsElapsed + 1,
           submitted: false,
@@ -173,8 +174,7 @@ final class NumbersBloc extends Bloc<NumbersEvent, NumbersState> with NumbersDep
     emit(NumbersStateSuccess(
       phase: NumbersPhaseRecall(
         originalSequence: originalSequence,
-        deck: List.generate(_numberCount, (i) => i),
-        placedSlots: List<int?>.filled(_numberCount, null),
+        placedSlots: List<int?>.filled(originalSequence.length, null),
         recallSecondsElapsed: recallSecondsElapsed,
         submitted: false,
       ),
@@ -186,43 +186,13 @@ final class NumbersBloc extends Bloc<NumbersEvent, NumbersState> with NumbersDep
     if (current is! NumbersStateSuccess || current.phase is! NumbersPhaseRecall) return;
     final phase = current.phase as NumbersPhaseRecall;
     if (phase.submitted) return;
-    if (phase.placedSlots[event.slotIndex] != null) return;
-    if (!phase.deck.contains(event.number)) return;
 
-    final newDeck = List<int>.from(phase.deck)..remove(event.number);
     final newSlots = List<int?>.from(phase.placedSlots);
     newSlots[event.slotIndex] = event.number;
 
     emit(NumbersStateSuccess(
       phase: NumbersPhaseRecall(
         originalSequence: phase.originalSequence,
-        deck: newDeck,
-        placedSlots: newSlots,
-        recallSecondsElapsed: phase.recallSecondsElapsed,
-        submitted: false,
-      ),
-    ));
-  }
-
-  void _onReturnNumberToDeck(NumbersEventReturnNumberToDeck event, Emitter<NumbersState> emit) {
-    final current = state;
-    if (current is! NumbersStateSuccess || current.phase is! NumbersPhaseRecall) return;
-    final phase = current.phase as NumbersPhaseRecall;
-    if (phase.submitted) return;
-
-    final number = phase.placedSlots[event.slotIndex];
-    if (number == null) return;
-
-    final newSlots = List<int?>.from(phase.placedSlots);
-    newSlots[event.slotIndex] = null;
-    final newDeck = List<int>.from(phase.deck)
-      ..add(number)
-      ..sort();
-
-    emit(NumbersStateSuccess(
-      phase: NumbersPhaseRecall(
-        originalSequence: phase.originalSequence,
-        deck: newDeck,
         placedSlots: newSlots,
         recallSecondsElapsed: phase.recallSecondsElapsed,
         submitted: false,
@@ -240,7 +210,6 @@ final class NumbersBloc extends Bloc<NumbersEvent, NumbersState> with NumbersDep
     emit(NumbersStateSuccess(
       phase: NumbersPhaseRecall(
         originalSequence: phase.originalSequence,
-        deck: phase.deck,
         placedSlots: phase.placedSlots,
         recallSecondsElapsed: phase.recallSecondsElapsed,
         submitted: true,

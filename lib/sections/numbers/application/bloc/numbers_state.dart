@@ -48,13 +48,11 @@ final class NumbersPhaseFinished extends NumbersPhase {
 final class NumbersPhaseRecall extends NumbersPhase {
   const NumbersPhaseRecall({
     required this.originalSequence,
-    required this.deck,
     required this.placedSlots,
     required this.recallSecondsElapsed,
     required this.submitted,
   });
   final List<int> originalSequence;
-  final List<int> deck;
   final List<int?> placedSlots;
   final int recallSecondsElapsed;
   final bool submitted;

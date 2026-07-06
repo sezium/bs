@@ -79,28 +79,28 @@ class OverlappingGrid extends StatelessWidget {
       },
     );
   }
+Widget _buildRow(List<int> indices, double step) {
+  final totalWidth = itemWidth + (indices.length - 1) * step;
 
-  Widget _buildRow(List<int> indices, double step) {
-    final totalWidth = itemWidth + (indices.length - 1) * step;
-
-    return SizedBox(
-      height: itemHeight + rowExtraHeight,
-      child: Center(
-        child: SizedBox(
-          width: totalWidth,
-          child: Stack(
-            alignment: Alignment.center,
-            clipBehavior: Clip.none,
-            children: [
-              for (var pos = 0; pos < indices.length; pos++)
-                Positioned(
-                  left: pos * step,
-                  child: Builder(builder: (context) => itemBuilder(context, indices[pos])),
-                ),
-            ],
-          ),
+  return SizedBox(
+    height: itemHeight + rowExtraHeight,
+    child: Align(
+      alignment: Alignment.centerLeft,
+      child: SizedBox(
+        width: totalWidth,
+        child: Stack(
+          alignment: Alignment.centerLeft,
+          clipBehavior: Clip.none,
+          children: [
+            for (var pos = 0; pos < indices.length; pos++)
+              Positioned(
+                left: pos * step,
+                child: Builder(builder: (context) => itemBuilder(context, indices[pos])),
+              ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

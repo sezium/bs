@@ -5,27 +5,23 @@ import 'package:bs/core/widgets/overlapping_grid.dart';
 import 'package:bs/core/widgets/training/training_highlight_bar.dart';
 import 'package:bs/sections/numbers/application/bloc/numbers_bloc.dart';
 import 'package:bs/sections/numbers/application/bloc/numbers_event.dart';
-import 'package:bs/sections/numbers/application/screen/numbers_art.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// Fase di richiamo: l'utente ripiazza i numeri dal mazzo negli slot nello
-/// stesso ordine in cui li ha visti. Stessa meccanica di `CardsRecallView`,
-/// ma con tessere numeriche rettangolari (più larghe che alte) invece di
-/// carte, e tema verde invece che rosso.
+/// Fase di richiamo: l'utente scrive, in ogni slot, il numero che ricorda
+/// in quella posizione. I numeri possono ripetersi, quindi non esiste più
+/// un mazzo di carte uniche: si usano dei TextField numerici.
 class NumbersRecallView extends StatefulWidget {
   const NumbersRecallView({
     super.key,
     required this.originalSequence,
-    required this.deck,
     required this.placedSlots,
     required this.recallSecondsElapsed,
     required this.submitted,
   });
 
   final List<int> originalSequence;
-  final List<int> deck;
   final List<int?> placedSlots;
   final int recallSecondsElapsed;
   final bool submitted;
@@ -37,65 +33,83 @@ class NumbersRecallView extends StatefulWidget {
 class _NumbersRecallViewState extends State<NumbersRecallView> {
   static const double _tileWidth = 56;
   static const double _tileHeight = 40;
-  static const double _tileOverlap = 20;
+  static const double _tileOverlap = 1;
 
-  int _currentSlotIndex = 0;
+  late List<TextEditingController> _controllers;
+  late List<FocusNode> _focusNodes;
 
   @override
   void initState() {
     super.initState();
-    HardwareKeyboard.instance.addHandler(_handleKeyEvent);
+    _initControllers();
+  }
+
+  void _initControllers() {
+    _controllers = List.generate(
+      widget.placedSlots.length,
+      (i) => TextEditingController(text: widget.placedSlots[i]?.toString().padLeft(2, '0') ?? ''),
+    );
+    _focusNodes = List.generate(widget.placedSlots.length, (_) => FocusNode());
+  }
+
+  @override
+  void didUpdateWidget(covariant NumbersRecallView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Se cambia la lunghezza della sequenza (nuova partita) ricreo tutto.
+    if (oldWidget.placedSlots.length != widget.placedSlots.length) {
+      for (final c in _controllers) {
+        c.dispose();
+      }
+      for (final f in _focusNodes) {
+        f.dispose();
+      }
+      _initControllers();
+      return;
+    }
+    // Sincronizza il testo solo se il campo non ha il focus, per non
+    // interferire con quello che l'utente sta scrivendo.
+    for (var i = 0; i < widget.placedSlots.length; i++) {
+      if (_focusNodes[i].hasFocus) continue;
+      final expected = widget.placedSlots[i]?.toString().padLeft(2, '0') ?? '';
+      if (_controllers[i].text != expected) {
+        _controllers[i].text = expected;
+      }
+    }
   }
 
   @override
   void dispose() {
-    HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    for (final f in _focusNodes) {
+      f.dispose();
+    }
     super.dispose();
   }
 
-  bool _handleKeyEvent(KeyEvent event) {
-    if (widget.submitted) return false;
-    if (event is! KeyDownEvent) return false;
-
-    if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-      _moveCurrentSlot(1);
-      return true;
-    }
-    if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-      _moveCurrentSlot(-1);
-      return true;
-    }
-    return false;
-  }
-
-  void _moveCurrentSlot(int delta) {
-    final last = widget.placedSlots.length - 1;
-    setState(() => _currentSlotIndex = (_currentSlotIndex + delta).clamp(0, last));
-  }
-
-  void _onTapSlot(int slotIndex) {
+  void _onChanged(int slotIndex, String value) {
     if (widget.submitted) return;
-    if (widget.placedSlots[slotIndex] != null) {
-      context.read<NumbersBloc>().add(NumbersEventReturnNumberToDeck(slotIndex: slotIndex));
+    final bloc = context.read<NumbersBloc>();
+
+    if (value.isEmpty) {
+      bloc.add(NumbersEventPlaceNumber(number: null, slotIndex: slotIndex));
+      return;
     }
-    setState(() => _currentSlotIndex = slotIndex);
-  }
 
-  void _onTapDeckNumber(int number) {
-    if (widget.submitted) return;
-    if (widget.placedSlots[_currentSlotIndex] != null) return;
+    final parsed = int.tryParse(value);
+    if (parsed == null) return;
+    bloc.add(NumbersEventPlaceNumber(number: parsed.clamp(0, 99), slotIndex: slotIndex));
 
-    context.read<NumbersBloc>().add(NumbersEventPlaceNumber(number: number, slotIndex: _currentSlotIndex));
-
-    // Avanza automaticamente al prossimo slot vuoto, se presente.
-    final nextEmpty = widget.placedSlots.indexWhere((c) => c == null, _currentSlotIndex + 1);
-    final fallbackEmpty = nextEmpty != -1 ? nextEmpty : widget.placedSlots.indexWhere((c) => c == null);
-    if (fallbackEmpty != -1) setState(() => _currentSlotIndex = fallbackEmpty);
+    // Passa automaticamente al campo successivo dopo 2 cifre.
+    if (value.length >= 2 && slotIndex + 1 < _focusNodes.length) {
+      FocusScope.of(context).requestFocus(_focusNodes[slotIndex + 1]);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final allPlaced = !widget.placedSlots.contains(null);
+    final allFilled = !widget.placedSlots.contains(null);
     final bloc = context.read<NumbersBloc>();
 
     return SizedBox.expand(
@@ -112,18 +126,7 @@ class _NumbersRecallViewState extends State<NumbersRecallView> {
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  const SizedBox(height: 12),
-                  _buildSlots(),
-                  if (!widget.submitted) ...[
-                    const SizedBox(height: 24),
-                    _buildDeck(),
-                  ],
-                ],
-              ),
-            ),
+            child: SingleChildScrollView(child: Column(children: [const SizedBox(height: 12), _buildSlots()])),
           ),
           if (!widget.submitted)
             Padding(
@@ -131,7 +134,7 @@ class _NumbersRecallViewState extends State<NumbersRecallView> {
               child: bsButton(
                 title: 'Conferma',
                 color: BsColors.blue,
-                onTap: allPlaced ? () => bloc.add(const NumbersEventConfirmRecall()) : () {},
+                onTap: allFilled ? () => bloc.add(const NumbersEventConfirmRecall()) : () {},
               ),
             ),
         ],
@@ -145,77 +148,71 @@ class _NumbersRecallViewState extends State<NumbersRecallView> {
       itemWidth: _tileWidth,
       itemHeight: _tileHeight,
       overlap: _tileOverlap,
+      rowSpacing: 0,
+
       itemBuilder: (context, slotIndex) => _buildSlot(slotIndex),
     );
   }
 
   Widget _buildSlot(int slotIndex) {
     final placedNumber = widget.placedSlots[slotIndex];
-    final isCurrent = slotIndex == _currentSlotIndex;
-    final isCorrect =
-        widget.submitted && placedNumber != null && placedNumber == widget.originalSequence[slotIndex];
+    final isCorrect = widget.submitted && placedNumber != null && placedNumber == widget.originalSequence[slotIndex];
     final isWrong = widget.submitted && placedNumber != null && !isCorrect;
 
     Color background;
     Color borderColor;
 
-    if (widget.submitted) {
+  if (widget.submitted) {
       if (isCorrect) {
-        background = BsColors.blue.withValues(alpha: 0.35);
-        borderColor = BsColors.blue;
+        background = BsColors.correct.withValues(alpha: 0.8);
+        borderColor = BsColors.black;
       } else if (isWrong) {
-        background = BsColors.red.withValues(alpha: 0.35);
-        borderColor = BsColors.red;
+        background = BsColors.red.withValues(alpha: 0.8);
+        borderColor = BsColors.black;
       } else {
         background = BsColors.white;
         borderColor = BsColors.grey;
       }
-    } else if (isCurrent) {
-      background = placedNumber == null ? BsColors.blue.withValues(alpha: 0.25) : Colors.white;
-      borderColor = BsColors.blue;
     } else {
       background = Colors.white;
       borderColor = BsColors.grey;
     }
 
-    return GestureDetector(
-      onTap: () => _onTapSlot(slotIndex),
-      child: Container(
-        width: _tileWidth,
-        height: _tileHeight,
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: borderColor, width: 1),
-        ),
-        child: placedNumber != null ? NumberArt(number: placedNumber) : const SizedBox.shrink(),
+    return Container(
+      width: _tileWidth,
+      height: _tileHeight,
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(0),
+        border: Border.all(color: borderColor, width: 1),
       ),
-    );
-  }
-
-  Widget _buildDeck() {
-    return OverlappingGrid(
-      itemCount: widget.deck.length,
-      itemWidth: _tileWidth,
-      itemHeight: _tileHeight,
-      overlap: _tileOverlap,
-      rowSpacing: 16,
-      itemBuilder: (context, deckIndex) => _buildDeckTile(widget.deck[deckIndex]),
-    );
-  }
-
-  Widget _buildDeckTile(int number) {
-    return GestureDetector(
-      onTap: () => _onTapDeckNumber(number),
-      child: Container(
-        width: _tileWidth,
-        height: _tileHeight,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: BsColors.blue, width: 1),
+      child: Center(
+        child: Stack(
+          children: [
+            TextField(
+              cursorColor: BsColors.black,
+              cursorHeight: 20.0,
+              cursorWidth: 1.0,
+              controller: _controllers[slotIndex],
+              focusNode: _focusNodes[slotIndex],
+              enabled: !widget.submitted,
+              textAlign: TextAlign.center,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(2)],
+              style: TextStyle(
+                fontWeight: FontWeight.w400,
+                color: BsColors.black,
+              ),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              onChanged: (value) => _onChanged(slotIndex, value),
+            ),
+          ],
+     
         ),
-        child: NumberArt(number: number),
       ),
     );
   }

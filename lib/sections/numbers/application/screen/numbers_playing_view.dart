@@ -1,3 +1,4 @@
+import 'package:bs/core/extentions/build_context_extention.dart';
 import 'package:bs/core/format.dart';
 import 'package:bs/core/widgets/button.dart';
 import 'package:bs/core/widgets/colors.dart';
@@ -71,7 +72,7 @@ class _NumbersPlayingViewState extends State<NumbersPlayingView> {
 
     // Successivi da leggere (a sinistra) e già usciti, dal più recente (a destra).
     final upcoming = widget.numberSequence.sublist(widget.currentIndex + 1);
-    final gone = widget.numberSequence.sublist(0, widget.currentIndex).reversed.toList();
+    final gone = widget.numberSequence.sublist(0, widget.currentIndex).toList();
 
     return SizedBox.expand(
       child: Column(
@@ -87,14 +88,25 @@ class _NumbersPlayingViewState extends State<NumbersPlayingView> {
               bsButton(title: 'Skip', color: BsColors.blue, onTap: () => bloc.add(const NumbersEventSkipPlaying())),
             ],
           ),
+
           const SizedBox(height: 16),
-          Expanded(
-            child: Row(
+          Flexible(
+            child: Container(
+              decoration: BoxDecoration(color: BsColors.overlay,
+                border: Border.all(color: BsColors.grey, width: 1),
+              ),
+         
+              padding: EdgeInsets.all(10),
+              
+              child: Column(
+                children: [
+            
+                      Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
                   child: _NumberList(
-                    label: 'Successivi',
                     numbers: upcoming,
                     itemWidth: _sideWidth,
                     itemHeight: _sideHeight,
@@ -104,18 +116,13 @@ class _NumbersPlayingViewState extends State<NumbersPlayingView> {
                 _buildCurrent(current),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: _NumberList(
-                    label: 'Usciti',
-                    numbers: gone,
-                    itemWidth: _sideWidth,
-                    itemHeight: _sideHeight,
-                  ),
+                  child: _NumberList(numbers: gone, itemWidth: _sideWidth, itemHeight: _sideHeight, scrollLast: true,),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
-          Padding(
+                      ),
+                      const SizedBox(height: 16),
+                      Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -139,7 +146,12 @@ class _NumbersPlayingViewState extends State<NumbersPlayingView> {
                 ),
               ],
             ),
+                      ),
+                ],
+              ),
+            ),
           ),
+          
         ],
       ),
     );
@@ -163,51 +175,58 @@ class _NumbersPlayingViewState extends State<NumbersPlayingView> {
 
 /// Colonna scorrevole di numeri già usciti o ancora da leggere.
 class _NumberList extends StatelessWidget {
-  const _NumberList({
-    required this.label,
-    required this.numbers,
-    required this.itemWidth,
-    required this.itemHeight,
-  });
+  _NumberList({required this.numbers, required this.itemWidth, required this.itemHeight, this.scrollLast = false});
 
-  final String label;
   final List<int> numbers;
   final double itemWidth;
   final double itemHeight;
+  final bool scrollLast;
+
+  final ScrollController _scrollController = ScrollController();
+
+  void _scrollToBottom() {
+    if (!_scrollController.hasClients) return;
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    if(scrollLast) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    }
+    return Row(
       children: [
-        Text(
-          label,
-          style: GoogleFonts.lato(fontSize: 12, fontWeight: FontWeight.bold, color: BsColors.blue),
-        ),
-        const SizedBox(height: 8),
-       Expanded(
-  child: numbers.isEmpty
-      ? const SizedBox.shrink()
-      : ScrollConfiguration(
-          behavior: const ScrollBehavior().copyWith(scrollbars: false),
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            itemCount: numbers.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 8),
-            itemBuilder: (context, index) => Center(
-              child: Container(
-                width: itemWidth,
-                height: itemHeight,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(0),
-                  border: Border.all(color: BsColors.grey),
+        Expanded(
+          child: numbers.isEmpty
+              ? const SizedBox.shrink()
+              : ScrollConfiguration(
+                  behavior: const ScrollBehavior().copyWith(scrollbars: false),
+                  child: SizedBox(
+                    height: itemHeight, // constrain height to itemHeight
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: numbers.length,
+                      itemBuilder: (context, index) => Container(
+                        width: itemWidth, // set fixed width for each item
+                        height: itemHeight,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(0),
+                          border: Border.all(color: BsColors.grey),
+                        ),
+                        child: Center(
+                          child: NumberArt(number: numbers[index]),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-                child: NumberArt(number: numbers[index]),
-              ),
-            ),
-          ),
+           
+           
         ),
-),
+   
       ],
     );
   }

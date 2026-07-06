@@ -25,12 +25,65 @@ class NumbersScreen extends SingleBlocScreen<NumbersBloc> {
             constraints: const BoxConstraints(maxWidth: 1000),
             child: Padding(
               padding: const EdgeInsets.only(left: 20, right: 20, top: 20),
-              child: BlocBuilder<NumbersBloc, NumbersState>(builder: _buildState),
+              // buildWhen: evita di ricostruire l'intero albero (100 TextField
+              // nella recall) ad ogni tick del timer; rebuilda solo quando
+              // cambia la "forma" dello stato (fase diversa, dati diversi da
+              // quelli temporali). I singoli sotto-widget (timer, griglia)
+              // isolano ulteriormente i rebuild al loro interno.
+              child: BlocBuilder<NumbersBloc, NumbersState>(
+                buildWhen: _shouldRebuildScreen,
+                builder: _buildState,
+              ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  bool _shouldRebuildScreen(NumbersState previous, NumbersState current) {
+    // Cambio di stato/fase "strutturale": sempre rebuild.
+    if (previous.runtimeType != current.runtimeType) return true;
+
+    if (previous is NumbersStateSuccess && current is NumbersStateSuccess) {
+      final prevPhase = previous.phase;
+      final currPhase = current.phase;
+      if (prevPhase.runtimeType != currPhase.runtimeType) return true;
+
+      // ReadyRoom: il countdown va mostrato, quindi qui il rebuild è ok
+      // (è una vista leggera, nessun TextField).
+      if (currPhase is NumbersPhaseReadyRoom) return true;
+
+      // Playing: currentIndex/recallSecondsElapsed cambiano spesso ma la
+      // vista non ha TextField pesanti, quindi rebuild pure qui.
+      if (currPhase is NumbersPhasePlaying) return true;
+
+      // Recall: qui evitiamo il rebuild "globale" per i soli tick del
+      // timer. NumbersRecallView riceve comunque il valore aggiornato di
+      // recallSecondsElapsed tramite un BlocBuilder interno isolato,
+      // quindi non serve ricostruire l'intera vista per quello.
+      if (currPhase is NumbersPhaseRecall && prevPhase is NumbersPhaseRecall) {
+        final samePlacedSlots = _listEquals(prevPhase.placedSlots, currPhase.placedSlots);
+        final sameSubmitted = prevPhase.submitted == currPhase.submitted;
+        final sameSeconds = prevPhase.recallSecondsElapsed == currPhase.recallSecondsElapsed;
+        // Se cambia solo il tempo, non serve un rebuild qui: lo gestisce
+        // NumbersRecallView internamente.
+        if (samePlacedSlots && sameSubmitted && !sameSeconds) return false;
+        return !(samePlacedSlots && sameSubmitted && sameSeconds);
+      }
+
+      if (currPhase is NumbersPhaseFinished) return true;
+    }
+
+    return true;
+  }
+
+  bool _listEquals<T>(List<T> a, List<T> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   Widget _buildState(BuildContext context, NumbersState state) {
@@ -64,14 +117,17 @@ class NumbersScreen extends SingleBlocScreen<NumbersBloc> {
         ),
       NumbersPhaseRecall(
         :final originalSequence,
-        :final deck,
         :final placedSlots,
         :final recallSecondsElapsed,
         :final submitted,
       ) =>
         NumbersRecallView(
+          // Key stabile: fondamentale perché Flutter riusi lo State (e quindi
+          // i TextEditingController/FocusNode) tra un rebuild e l'altro
+          // invece di ricrearli, cosa che causerebbe perdita di focus e
+          // ritardi percepiti nell'interazione.
+          key: const ValueKey('recall-view'),
           originalSequence: originalSequence,
-          deck: deck,
           placedSlots: placedSlots,
           recallSecondsElapsed: recallSecondsElapsed,
           submitted: submitted,

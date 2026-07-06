@@ -36,7 +36,7 @@ class TrainingHighlightBar extends StatelessWidget {
         height: 50,
         decoration: BoxDecoration(
           color: BsColors.overlay,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(0),
           border: Border.all(color: BsColors.grey, width: 1),
         ),
         child: Row(

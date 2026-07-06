@@ -40,7 +40,7 @@ final class NumbersEventSkipPlaying extends NumbersEvent {
 
 final class NumbersEventPlaceNumber extends NumbersEvent {
   const NumbersEventPlaceNumber({required this.number, required this.slotIndex});
-  final int number;
+  final int? number;
   final int slotIndex;
 }
 
