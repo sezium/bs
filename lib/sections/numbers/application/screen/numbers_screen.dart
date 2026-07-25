@@ -10,6 +10,7 @@ import 'package:bs/sections/numbers/application/bloc/numbers_state.dart';
 import 'package:bs/sections/numbers/application/screen/numbers_playing_view.dart';
 import 'package:bs/sections/numbers/application/screen/numbers_recall_view.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class NumbersScreen extends SingleBlocScreen<NumbersBloc> {
@@ -88,16 +89,58 @@ class NumbersScreen extends SingleBlocScreen<NumbersBloc> {
 
   Widget _buildState(BuildContext context, NumbersState state) {
     return switch (state) {
-      NumbersStateInit() => TrainingStartView(
-          title: 'Numbers',
-          imagePath: 'long/event_numbers_long.png',
-          color: BsColors.blue,
-          onStart: () => context.read<NumbersBloc>().add(const NumbersEventStartReadyRoom()),
-        ),
+      NumbersStateInit() => _buildInitView(context),
       NumbersStateLoading() => Center(child: CircularProgressIndicator(color: BsColors.blue)),
       NumbersStateFailure(:final message) => TrainingFailureView(message: message),
       NumbersStateSuccess(:final phase) => _buildPhase(context, phase),
     };
+  }
+
+  Widget _buildInitView(BuildContext context) {
+    final controller = TextEditingController(text: '100');
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        const SizedBox(height: 24),
+        TrainingStartView(
+          title: 'Numbers',
+          imagePath: 'long/event_numbers_long.png',
+          color: BsColors.blue,
+          onStart: () {
+            final count = int.tryParse(controller.text) ?? 100;
+            context.read<NumbersBloc>().add(NumbersEventStartReadyRoom(numberCount: count));
+          },
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: 100,
+          child: TextField(
+            controller: controller,
+            cursorColor: BsColors.black,
+            textAlign: TextAlign.center,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            decoration: InputDecoration(
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.zero,
+                borderSide: BorderSide(color: BsColors.grey, width: 1),
+              ),
+              enabledBorder: OutlineInputBorder(
+                     borderRadius: BorderRadius.zero,
+                borderSide: BorderSide(color: BsColors.grey, width: 1),
+              ),
+              focusedBorder: OutlineInputBorder(
+                     borderRadius: BorderRadius.zero,
+                borderSide: BorderSide(color: BsColors.grey, width: 1),
+              ),
+            ),
+       
+          ),
+        ),
+        
+      ],
+    );
   }
 
   Widget _buildPhase(BuildContext context, NumbersPhase phase) {

@@ -149,12 +149,13 @@ class _NumbersRecallViewState extends State<NumbersRecallView> {
       itemHeight: _tileHeight,
       overlap: _tileOverlap,
       rowSpacing: 0,
+      rowExtraHeight: 15,
 
       itemBuilder: (context, slotIndex) => _buildSlot(slotIndex),
     );
   }
 
-  Widget _buildSlot(int slotIndex) {
+ Widget _buildSlot(int slotIndex) {
     final placedNumber = widget.placedSlots[slotIndex];
     final isCorrect = widget.submitted && placedNumber != null && placedNumber == widget.originalSequence[slotIndex];
     final isWrong = widget.submitted && placedNumber != null && !isCorrect;
@@ -162,7 +163,7 @@ class _NumbersRecallViewState extends State<NumbersRecallView> {
     Color background;
     Color borderColor;
 
-  if (widget.submitted) {
+    if (widget.submitted) {
       if (isCorrect) {
         background = BsColors.correct.withValues(alpha: 0.8);
         borderColor = BsColors.black;
@@ -178,18 +179,35 @@ class _NumbersRecallViewState extends State<NumbersRecallView> {
       borderColor = BsColors.grey;
     }
 
-    return Container(
-      width: _tileWidth,
-      height: _tileHeight,
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(0),
-        border: Border.all(color: borderColor, width: 1),
-      ),
-      child: Center(
-        child: Stack(
-          children: [
-            TextField(
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        if (isWrong)
+          Positioned(
+            left: 0,
+            right: 0,
+            top: -16,
+            child: Center(
+              child: Text(
+                widget.originalSequence[slotIndex].toString().padLeft(2, '0'),
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                  color: BsColors.black,
+                ),
+              ),
+            ),
+          ),
+        Container(
+          width: _tileWidth,
+          height: _tileHeight,
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(0),
+            border: Border.all(color: borderColor, width: 1),
+          ),
+          child: Center(
+            child: TextField(
               cursorColor: BsColors.black,
               cursorHeight: 20.0,
               cursorWidth: 1.0,
@@ -210,10 +228,9 @@ class _NumbersRecallViewState extends State<NumbersRecallView> {
               ),
               onChanged: (value) => _onChanged(slotIndex, value),
             ),
-          ],
-     
+          ),
         ),
-      ),
+      ],
     );
   }
 }

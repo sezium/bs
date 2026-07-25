@@ -6,8 +6,9 @@ final class NumbersEventInit extends NumbersEvent {
   const NumbersEventInit();
 }
 
-final class NumbersEventStartReadyRoom extends NumbersEvent {
-  const NumbersEventStartReadyRoom();
+class NumbersEventStartReadyRoom extends NumbersEvent {
+  const NumbersEventStartReadyRoom({this.numberCount = 100});
+  final int numberCount;
 }
 
 final class NumbersEventTick extends NumbersEvent {

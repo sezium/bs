@@ -5,15 +5,38 @@ import 'package:bs/sections/numbers/application/bloc/numbers_state.dart';
 import 'package:bs/sections/numbers/dependency/numbers_dependencies_mixin.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-const int _readyRoomDuration = 3;
+const int _readyRoomDuration = 10;
 
-/// Quanti numeri compongono la sequenza da memorizzare.
-const int _numberCount = 100;
 
 final class NumbersBloc extends Bloc<NumbersEvent, NumbersState> with NumbersDependenciesMixin {
-  Timer? _countdownTimer;
+ Timer? _countdownTimer;
   Timer? _recallTimer;
   final Random _random = Random();
+  int _numberCount = 100; // valore scelto dall'utente, con default di sicurezza
+
+
+   void _onStartReadyRoom(NumbersEventStartReadyRoom event, Emitter<NumbersState> emit) {
+    _numberCount = event.numberCount.clamp(1, 999); // safety clamp
+    emit(const NumbersStateSuccess(phase: NumbersPhaseReadyRoom(secondsRemaining: _readyRoomDuration)));
+
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      add(const NumbersEventTick());
+    });
+  }
+
+  void _onReadyRoomFinished(NumbersEventReadyRoomFinished event, Emitter<NumbersState> emit) {
+    final sequence = List.generate(_numberCount, (_) => _random.nextInt(100));
+     emit(NumbersStateSuccess(
+      phase: NumbersPhasePlaying(numberSequence: sequence, currentIndex: 0, recallSecondsElapsed: 0),
+    ));
+
+    _recallTimer?.cancel();
+    _recallTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      add(const NumbersEventRecallTick());
+    });
+  }
+
 
   NumbersBloc() : super(const NumbersStateInit()) {
     on<NumbersEventInit>(_onInit);
@@ -34,14 +57,6 @@ final class NumbersBloc extends Bloc<NumbersEvent, NumbersState> with NumbersDep
     emit(const NumbersStateInit());
   }
 
-  void _onStartReadyRoom(NumbersEventStartReadyRoom event, Emitter<NumbersState> emit) {
-    emit(const NumbersStateSuccess(phase: NumbersPhaseReadyRoom(secondsRemaining: _readyRoomDuration)));
-
-    _countdownTimer?.cancel();
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      add(const NumbersEventTick());
-    });
-  }
 
   void _onTick(NumbersEventTick event, Emitter<NumbersState> emit) {
     final current = state;
@@ -58,19 +73,6 @@ final class NumbersBloc extends Bloc<NumbersEvent, NumbersState> with NumbersDep
     }
   }
 
-  void _onReadyRoomFinished(NumbersEventReadyRoomFinished event, Emitter<NumbersState> emit) {
-    // Numeri casuali indipendenti: possono ripetersi, non è una permutazione di 0..99.
-    final sequence = List.generate(_numberCount, (_) => _random.nextInt(100));
-
-    emit(NumbersStateSuccess(
-      phase: NumbersPhasePlaying(numberSequence: sequence, currentIndex: 0, recallSecondsElapsed: 0),
-    ));
-
-    _recallTimer?.cancel();
-    _recallTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      add(const NumbersEventRecallTick());
-    });
-  }
 
   void _onRecallTick(NumbersEventRecallTick event, Emitter<NumbersState> emit) {
     final current = state;

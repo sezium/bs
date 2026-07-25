@@ -1,4 +1,6 @@
+import 'package:bs/core/extentions/build_context_extention.dart';
 import 'package:bs/core/widgets/button.dart';
+import 'package:bs/core/widgets/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -27,18 +29,33 @@ class TrainingStartView extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SizedBox(
-              width: 150,
-              child: Text(
-                title,
-                style: GoogleFonts.lato(color: color, fontSize: 28, fontWeight: FontWeight.bold),
+            // if(!context.isMobile)
+            // SizedBox(
+            //   width: 200,
+            //   child: Text(
+            //     title,
+            //     style: GoogleFonts.lato(color: color, fontSize: 28, fontWeight: FontWeight.bold),
+            //   ),
+            // ),
+            Flexible(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxHeight: 150, // You can adjust this value as needed
+                ),
+                child: Image.asset(
+                  imagePath,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
-            Image.asset(imagePath, height: 100),
+       
           ],
         ),
-        const SizedBox(height: 24),
-        const Divider(),
+         const SizedBox(height: 24),
+         Padding(
+           padding: const EdgeInsets.only(top: 24, bottom: 36),
+           child: Divider(color: BsColors.grey),
+         ),
         const SizedBox(height: 36),
         Center(child: bsButton(title: 'Start', color: color, onTap: onStart)),
       ],
