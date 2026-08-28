@@ -133,7 +133,7 @@ class _CardsRecallViewState extends State<CardsRecallView> {
             Padding(
               padding: const EdgeInsets.only(bottom: 16, top: 8),
               child: bsButton(
-                title: 'Conferma',
+                title: 'Confirm',
                 color: BsColors.red,
                 onTap: allPlaced ? () => bloc.add(const CardsEventConfirmRecall()) : () {},
               ),

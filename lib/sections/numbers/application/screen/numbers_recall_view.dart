@@ -132,7 +132,7 @@ class _NumbersRecallViewState extends State<NumbersRecallView> {
             Padding(
               padding: const EdgeInsets.only(bottom: 16, top: 8),
               child: bsButton(
-                title: 'Conferma',
+                title: 'Confirm',
                 color: BsColors.blue,
                 onTap: allFilled ? () => bloc.add(const NumbersEventConfirmRecall()) : () {},
               ),

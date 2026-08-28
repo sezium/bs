@@ -92,66 +92,64 @@ class _NumbersPlayingViewState extends State<NumbersPlayingView> {
           const SizedBox(height: 16),
           Flexible(
             child: Container(
-              decoration: BoxDecoration(color: BsColors.overlay,
+              decoration: BoxDecoration(
+                color: BsColors.overlay,
                 border: Border.all(color: BsColors.grey, width: 1),
               ),
-         
-              padding: EdgeInsets.all(10),
-              
+
+              padding: EdgeInsets.symmetric(horizontal: 10),
+
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-            
-                      Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: _NumberList(
-                    numbers: upcoming,
-                    itemWidth: _sideWidth,
-                    itemHeight: _sideHeight,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: _NumberList(numbers: upcoming, itemWidth: _sideWidth, itemHeight: _sideHeight),
+                        ),
+                        _buildCurrent(current),
+                        Expanded(
+                          child: _NumberList(
+                            numbers: gone,
+                            itemWidth: _sideWidth,
+                            itemHeight: _sideHeight,
+                            scrollLast: true,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                _buildCurrent(current),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _NumberList(numbers: gone, itemWidth: _sideWidth, itemHeight: _sideHeight, scrollLast: true,),
-                ),
-              ],
-            ),
-                      ),
-                      const SizedBox(height: 16),
-                      Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                bsButtonIcon(
-                  icon: Icons.restart_alt,
-                  color: BsColors.blue,
-                  onTap: () => bloc.add(const NumbersEventRestartSequence()),
-                ),
-                const SizedBox(width: 12),
-                bsButtonIcon(
-                  icon: Icons.arrow_back,
-                  color: BsColors.blue,
-                  onTap: isFirst ? () {} : () => bloc.add(const NumbersEventPreviousNumber()),
-                ),
-                const SizedBox(width: 12),
-                bsButtonIcon(
-                  icon: Icons.arrow_forward,
-                  color: BsColors.blue,
-                  onTap: () => bloc.add(const NumbersEventNextNumber()),
-                ),
-              ],
-            ),
-                      ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        bsButtonIcon(
+                          icon: Icons.restart_alt,
+                          color: BsColors.blue,
+                          onTap: () => bloc.add(const NumbersEventRestartSequence()),
+                        ),
+                        const SizedBox(width: 12),
+                        bsButtonIcon(
+                          icon: Icons.arrow_back,
+                          color: BsColors.blue,
+                          onTap: isFirst ? () {} : () => bloc.add(const NumbersEventPreviousNumber()),
+                        ),
+                        const SizedBox(width: 12),
+                        bsButtonIcon(
+                          icon: Icons.arrow_forward,
+                          color: BsColors.blue,
+                          onTap: () => bloc.add(const NumbersEventNextNumber()),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
-          
         ],
       ),
     );
@@ -186,15 +184,16 @@ class _NumberList extends StatelessWidget {
 
   void _scrollToBottom() {
     if (!_scrollController.hasClients) return;
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-      }
+    _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+  }
 
   @override
   Widget build(BuildContext context) {
-    if(scrollLast) {
+    if (scrollLast) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     }
     return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Expanded(
           child: numbers.isEmpty
@@ -205,7 +204,7 @@ class _NumberList extends StatelessWidget {
                     height: itemHeight, // constrain height to itemHeight
                     child: ListView.builder(
                       controller: _scrollController,
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 0),
                       scrollDirection: Axis.horizontal,
                       itemCount: numbers.length,
                       itemBuilder: (context, index) => Container(
@@ -216,17 +215,12 @@ class _NumberList extends StatelessWidget {
                           borderRadius: BorderRadius.circular(0),
                           border: Border.all(color: BsColors.grey),
                         ),
-                        child: Center(
-                          child: NumberArt(number: numbers[index]),
-                        ),
+                        child: Center(child: NumberArt(number: numbers[index])),
                       ),
                     ),
                   ),
                 ),
-           
-           
         ),
-   
       ],
     );
   }
