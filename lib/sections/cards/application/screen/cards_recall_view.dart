@@ -105,7 +105,7 @@ class _CardsRecallViewState extends State<CardsRecallView> {
           TrainingHighlightBar(
             title: 'Recall',
             color: BsColors.red,
-            info: [TrainingBarLabel('Recall Time: ${formatMinutesSeconds(widget.recallSecondsElapsed)}')],
+            info: [TrainingBarLabel(formatMinutesSeconds(widget.recallSecondsElapsed))],
             // Il tasto "End" compare solo dopo la conferma: prima era
             // sempre visibile e chiamava context.pop() invece di chiudere
             // davvero la sessione.

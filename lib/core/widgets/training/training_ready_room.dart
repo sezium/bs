@@ -26,7 +26,7 @@ class TrainingReadyRoomView extends StatelessWidget {
         TrainingHighlightBar(
           title: title,
           color: color,
-          info: [TrainingBarLabel('Memorization Starts in: ${formatMinutesSeconds(secondsRemaining)}')],
+          info: [TrainingBarLabel(formatMinutesSeconds(secondsRemaining))],
           actions: [bsButton(title: 'Skip', color: color, onTap: onSkip)],
         ),
       ],

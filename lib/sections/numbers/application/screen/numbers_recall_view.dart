@@ -118,7 +118,7 @@ class _NumbersRecallViewState extends State<NumbersRecallView> {
           TrainingHighlightBar(
             title: 'Recall',
             color: BsColors.blue,
-            info: [TrainingBarLabel('Recall Time: ${formatMinutesSeconds(widget.recallSecondsElapsed)}')],
+            info: [TrainingBarLabel(formatMinutesSeconds(widget.recallSecondsElapsed))],
             actions: [
               if (widget.submitted)
                 bsButton(title: 'End', color: BsColors.blue, onTap: () => bloc.add(const NumbersEventFinishRecall())),

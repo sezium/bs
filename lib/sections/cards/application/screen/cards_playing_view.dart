@@ -99,7 +99,7 @@ class _CardsPlayingViewState extends State<CardsPlayingView> {
             color: BsColors.red,
             info: [
               TrainingBarLabel('Card ${widget.currentIndex + 1} / ${widget.cardSequence.length}'),
-              TrainingBarLabel('Recall Time: ${formatMinutesSeconds(widget.secondsElapsed)}'),
+              TrainingBarLabel(formatMinutesSeconds(widget.secondsElapsed)),
             ],
             actions: [
               bsButton(title: 'Skip', color: BsColors.red, onTap: () => bloc.add(const CardsEventSkipPlaying())),

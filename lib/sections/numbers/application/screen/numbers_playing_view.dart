@@ -81,8 +81,8 @@ class _NumbersPlayingViewState extends State<NumbersPlayingView> {
             title: 'Numbers',
             color: BsColors.blue,
             info: [
-              TrainingBarLabel('Number ${widget.currentIndex + 1} / ${widget.numberSequence.length}'),
-              TrainingBarLabel('Memorization Time: ${formatMinutesSeconds(widget.secondsElapsed)}'),
+              TrainingBarLabel('${widget.currentIndex + 1} / ${widget.numberSequence.length}'),
+              TrainingBarLabel(formatMinutesSeconds(widget.secondsElapsed)),
             ],
             actions: [
               bsButton(title: 'Skip', color: BsColors.blue, onTap: () => bloc.add(const NumbersEventSkipPlaying())),
