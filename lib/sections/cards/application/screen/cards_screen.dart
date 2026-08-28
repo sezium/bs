@@ -1,7 +1,6 @@
 import 'package:bs/base/application/screen/base_screen.dart';
 import 'package:bs/core/widgets/colors.dart';
 import 'package:bs/core/widgets/training/training_failure_view.dart';
-import 'package:bs/core/widgets/training/training_finished_view.dart';
 import 'package:bs/core/widgets/training/training_ready_room.dart';
 import 'package:bs/core/widgets/training/training_start_view.dart';
 import 'package:bs/sections/cards/application/bloc/cards_bloc.dart';
@@ -9,6 +8,7 @@ import 'package:bs/sections/cards/application/bloc/cards_event.dart';
 import 'package:bs/sections/cards/application/bloc/cards_state.dart';
 import 'package:bs/sections/cards/application/screen/cards_playing_view.dart';
 import 'package:bs/sections/cards/application/screen/cards_recall_view.dart';
+import 'package:bs/sections/training/application/screen/training_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -75,10 +75,8 @@ class CardsScreen extends SingleBlocScreen<CardsBloc> {
           recallSecondsElapsed: recallSecondsElapsed,
           submitted: submitted,
         ),
-      CardsPhaseFinished(:final totalRecallSeconds) => TrainingFinishedView(
-          totalRecallSeconds: totalRecallSeconds,
-          onRestart: () => context.read<CardsBloc>().add(const CardsEventStartReadyRoom()),
-        ),
+      CardsPhaseFinished() => TrainingScreen(),
+ 
     };
   }
 
