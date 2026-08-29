@@ -7,8 +7,8 @@ final class NumbersEventInit extends NumbersEvent {
 }
 
 class NumbersEventStartReadyRoom extends NumbersEvent {
-  const NumbersEventStartReadyRoom({this.numberCount = 100});
-  final int numberCount;
+  const NumbersEventStartReadyRoom({this.numberCount});
+  final int? numberCount;
 }
 
 final class NumbersEventTick extends NumbersEvent {

@@ -5,6 +5,7 @@ import 'package:bs/core/widgets/overlapping_grid.dart';
 import 'package:bs/core/widgets/training/training_highlight_bar.dart';
 import 'package:bs/sections/numbers/application/bloc/numbers_bloc.dart';
 import 'package:bs/sections/numbers/application/bloc/numbers_event.dart';
+import 'package:bs/sections/numbers/application/bloc/numbers_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -118,7 +119,7 @@ class _NumbersRecallViewState extends State<NumbersRecallView> {
           TrainingHighlightBar(
             title: 'Recall',
             color: BsColors.blue,
-            info: [TrainingBarLabel(formatMinutesSeconds(widget.recallSecondsElapsed))],
+            info: [_RecallTimerLabel(fallbackSeconds: widget.recallSecondsElapsed)],
             actions: [
               if (widget.submitted)
                 bsButton(title: 'End', color: BsColors.blue, onTap: () => bloc.add(const NumbersEventFinishRecall())),
@@ -232,5 +233,41 @@ class _NumbersRecallViewState extends State<NumbersRecallView> {
         ),
       ],
     );
+  }
+}
+
+/// Etichetta del tempo di recall isolata in un proprio `BlocBuilder`: lo
+/// screen esterno (`NumbersScreen`) salta di proposito il rebuild
+/// dell'intera vista quando cambia solo `recallSecondsElapsed`, per non
+/// ricreare tutti i TextField della griglia a ogni tick del timer. Senza
+/// questo widget il tempo mostrato resterebbe fermo, perché
+/// `NumbersRecallView` riceverebbe sempre lo stesso valore "vecchio" via
+/// prop. Qui invece leggiamo il tempo direttamente dal bloc ogni secondo,
+/// senza toccare il resto dell'albero.
+class _RecallTimerLabel extends StatelessWidget {
+  const _RecallTimerLabel({required this.fallbackSeconds});
+
+  final int fallbackSeconds;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<NumbersBloc, NumbersState>(
+      buildWhen: (previous, current) {
+        final prevSeconds = _secondsOf(previous);
+        final currSeconds = _secondsOf(current);
+        return prevSeconds != currSeconds;
+      },
+      builder: (context, state) {
+        final seconds = _secondsOf(state) ?? fallbackSeconds;
+        return TrainingBarLabel(formatMinutesSeconds(seconds));
+      },
+    );
+  }
+
+  int? _secondsOf(NumbersState state) {
+    if (state is! NumbersStateSuccess) return null;
+    final phase = state.phase;
+    if (phase is NumbersPhaseRecall) return phase.recallSecondsElapsed;
+    return null;
   }
 }

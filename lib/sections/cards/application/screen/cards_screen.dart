@@ -1,5 +1,6 @@
 import 'package:bs/base/application/screen/base_screen.dart';
 import 'package:bs/core/widgets/colors.dart';
+import 'package:bs/core/widgets/settings/category_settings_screen.dart';
 import 'package:bs/core/widgets/training/training_failure_view.dart';
 import 'package:bs/core/widgets/training/training_ready_room.dart';
 import 'package:bs/core/widgets/training/training_start_view.dart';
@@ -11,6 +12,11 @@ import 'package:bs/sections/cards/application/screen/cards_recall_view.dart';
 import 'package:bs/sections/training/application/screen/training_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+
+/// Default usato quando l'utente non ha ancora scelto nulla nelle Settings
+/// (un mazzo reale ha al massimo 52 carte).
+const int _defaultCardCountFallback = 52;
 
 class CardsScreen extends SingleBlocScreen<CardsBloc> {
   CardsScreen({super.key}) : super(bloc: CardsBloc());
@@ -40,6 +46,18 @@ class CardsScreen extends SingleBlocScreen<CardsBloc> {
           imagePath: 'long/event_cards_long.png',
           color: BsColors.red,
           onStart: () => context.read<CardsBloc>().add(const CardsEventStartReadyRoom()),
+          onSettingsTap: () => context.push(
+            CategorySettingsScreen.routeName,
+            extra: CategorySettingsArgs(
+              categoryId: cardsCategoryId,
+              title: 'Cards',
+              color: BsColors.red,
+              countLabel: 'Numero di carte',
+              defaultCount: _defaultCardCountFallback,
+              minCount: 1,
+              maxCount: 52,
+            ),
+          ),
         ),
       CardsStateLoading() => Center(child: CircularProgressIndicator(color: BsColors.red)),
       CardsStateFailure(:final message) => TrainingFailureView(message: message),

@@ -1,5 +1,6 @@
 import 'package:bs/base/application/screen/base_screen.dart';
 import 'package:bs/core/widgets/colors.dart';
+import 'package:bs/core/widgets/settings/category_settings_screen.dart';
 import 'package:bs/core/widgets/training/training_failure_view.dart';
 import 'package:bs/core/widgets/training/training_finished_view.dart';
 import 'package:bs/core/widgets/training/training_ready_room.dart';
@@ -12,6 +13,11 @@ import 'package:bs/sections/numbers/application/screen/numbers_recall_view.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+
+/// Default usato quando l'utente non ha ancora impostato nulla né nelle
+/// Settings né nel campo della schermata iniziale.
+const int _defaultNumberCountFallback = 100;
 
 class NumbersScreen extends SingleBlocScreen<NumbersBloc> {
   NumbersScreen({super.key}) : super(bloc: NumbersBloc());
@@ -97,7 +103,11 @@ class NumbersScreen extends SingleBlocScreen<NumbersBloc> {
   }
 
   Widget _buildInitView(BuildContext context) {
-    final controller = TextEditingController(text: '100');
+    final bloc = context.read<NumbersBloc>();
+    final defaultCount = bloc.categorySettingsRepository.getItemCount(numbersCategoryId) ?? _defaultNumberCountFallback;
+    // Nessun testo pre-riempito: il campo può restare vuoto, in tal caso al
+    // tap di Start si userà il default (impostazioni o fallback).
+    final controller = TextEditingController();
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -108,9 +118,22 @@ class NumbersScreen extends SingleBlocScreen<NumbersBloc> {
           imagePath: 'long/event_numbers_long.png',
           color: BsColors.blue,
           onStart: () {
-            final count = int.tryParse(controller.text) ?? 100;
+            final text = controller.text.trim();
+            final count = text.isEmpty ? null : int.tryParse(text);
             context.read<NumbersBloc>().add(NumbersEventStartReadyRoom(numberCount: count));
           },
+          onSettingsTap: () => context.push(
+            CategorySettingsScreen.routeName,
+            extra: CategorySettingsArgs(
+              categoryId: numbersCategoryId,
+              title: 'Numbers',
+              color: BsColors.blue,
+              countLabel: 'Numero di numeri',
+              defaultCount: _defaultNumberCountFallback,
+              minCount: 1,
+              maxCount: 999,
+            ),
+          ),
         ),
         const SizedBox(height: 12),
         SizedBox(
@@ -122,6 +145,7 @@ class NumbersScreen extends SingleBlocScreen<NumbersBloc> {
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: InputDecoration(
+              hintText: '$defaultCount',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.zero,
                 borderSide: BorderSide(color: BsColors.grey, width: 1),
