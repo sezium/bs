@@ -6,17 +6,24 @@ import 'package:bs/sections/numbers/dependency/numbers_dependencies_mixin.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 const int _readyRoomDuration = 10;
+const int _defaultNumberCount = 100;
+
+/// Stesso id passato a `CategorySettingsArgs.categoryId` nella schermata
+/// Numbers: serve per leggere il conteggio salvato nelle Settings.
+const String numbersCategoryId = 'numbers';
 
 
 final class NumbersBloc extends Bloc<NumbersEvent, NumbersState> with NumbersDependenciesMixin {
  Timer? _countdownTimer;
   Timer? _recallTimer;
   final Random _random = Random();
-  int _numberCount = 100; // valore scelto dall'utente, con default di sicurezza
+  int _numberCount = _defaultNumberCount; // valore scelto dall'utente, con default di sicurezza
 
 
    void _onStartReadyRoom(NumbersEventStartReadyRoom event, Emitter<NumbersState> emit) {
-    _numberCount = event.numberCount.clamp(1, 999); // safety clamp
+    final resolvedCount =
+        event.numberCount ?? categorySettingsRepository.getItemCount(numbersCategoryId) ?? _defaultNumberCount;
+    _numberCount = resolvedCount.clamp(1, 999); // safety clamp
     emit(const NumbersStateSuccess(phase: NumbersPhaseReadyRoom(secondsRemaining: _readyRoomDuration)));
 
     _countdownTimer?.cancel();

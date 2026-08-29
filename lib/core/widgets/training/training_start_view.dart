@@ -14,6 +14,7 @@ class TrainingStartView extends StatelessWidget {
     required this.imagePath,
     required this.color,
     required this.onStart,
+    this.onSettingsTap,
   });
 
   final String title;
@@ -21,11 +22,24 @@ class TrainingStartView extends StatelessWidget {
   final Color color;
   final VoidCallback onStart;
 
+  /// Se fornito, mostra un'icona impostazioni che apre la pagina Settings
+  /// comune per questa categoria. Se `null`, nessuna icona viene mostrata.
+  final VoidCallback? onSettingsTap;
+
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (onSettingsTap != null)
+          Align(
+            alignment: Alignment.topRight,
+            child: IconButton(
+              onPressed: onSettingsTap,
+              icon: Icon(Icons.settings, color: color),
+              tooltip: 'Settings',
+            ),
+          ),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

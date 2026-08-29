@@ -5,11 +5,20 @@ import 'package:bs/sections/cards/dependency/cards_dependencies_mixin.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 const int _readyRoomDuration = 3;
-const int _deckSize = 52;
+const int _fullDeckSize = 52;
+const int _defaultCardCount = 52;
+
+/// Stesso id passato a `CategorySettingsArgs.categoryId` nella schermata
+/// Cards: serve per leggere il conteggio salvato nelle Settings.
+const String cardsCategoryId = 'cards';
 
 final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependenciesMixin {
   Timer? _countdownTimer;
   Timer? _recallTimer;
+
+  /// Quante carte del mazzo vengono effettivamente usate in questa
+  /// sessione (un mazzo reale ha 52 carte uniche, quindi al massimo 52).
+  int _cardCount = _defaultCardCount;
 
   CardsBloc() : super(const CardsStateInit()) {
     on<CardsEventInit>(_onInit);
@@ -32,6 +41,9 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
   }
 
   void _onStartReadyRoom(CardsEventStartReadyRoom event, Emitter<CardsState> emit) {
+    final resolvedCount =
+        event.cardCount ?? categorySettingsRepository.getItemCount(cardsCategoryId) ?? _defaultCardCount;
+    _cardCount = resolvedCount.clamp(1, _fullDeckSize); // un mazzo reale non supera le 52 carte
     emit(const CardsStateSuccess(phase: CardsPhaseReadyRoom(secondsRemaining: _readyRoomDuration)));
 
     _countdownTimer?.cancel();
@@ -56,7 +68,10 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
   }
 
   void _onReadyRoomFinished(CardsEventReadyRoomFinished event, Emitter<CardsState> emit) {
-    final sequence = List.generate(_deckSize, (i) => i)..shuffle();
+    // Mazzo completo mescolato, di cui usiamo solo le prime _cardCount
+    // carte: così restano sempre carte reali (0-51) senza ripetizioni,
+    // anche quando l'utente sceglie di memorizzarne meno di 52.
+    final sequence = (List.generate(_fullDeckSize, (i) => i)..shuffle()).take(_cardCount).toList();
 
     emit(CardsStateSuccess(
       phase: CardsPhasePlaying(cardSequence: sequence, currentIndex: 0, recallSecondsElapsed: 0),
@@ -170,11 +185,16 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
     required List<int> originalSequence,
     required int recallSecondsElapsed,
   }) {
+    // Il mazzo da cui pescare in fase di recall contiene solo le carte
+    // effettivamente mostrate (originalSequence), non l'intero mazzo da 52:
+    // altrimenti, con un sottoinsieme, si potrebbero scegliere carte mai
+    // viste.
+    final recallDeck = List<int>.from(originalSequence)..sort();
     emit(CardsStateSuccess(
       phase: CardsPhaseRecall(
         originalSequence: originalSequence,
-        deck: List.generate(_deckSize, (i) => i),
-        placedSlots: List<int?>.filled(_deckSize, null),
+        deck: recallDeck,
+        placedSlots: List<int?>.filled(originalSequence.length, null),
         recallSecondsElapsed: recallSecondsElapsed,
         submitted: false,
       ),

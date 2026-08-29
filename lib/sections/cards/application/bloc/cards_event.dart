@@ -7,7 +7,12 @@ final class CardsEventInit extends CardsEvent {
 }
 
 final class CardsEventStartReadyRoom extends CardsEvent {
-  const CardsEventStartReadyRoom();
+  const CardsEventStartReadyRoom({this.cardCount});
+
+  /// Numero di carte del mazzo da memorizzare (max 52, un mazzo reale non
+  /// ha ripetizioni). `null` = usa il valore salvato nelle Settings, poi il
+  /// default.
+  final int? cardCount;
 }
 
 final class CardsEventTick extends CardsEvent {

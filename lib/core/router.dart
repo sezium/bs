@@ -1,3 +1,4 @@
+import 'package:bs/core/widgets/settings/category_settings_screen.dart';
 import 'package:bs/sections/cards/application/screen/cards_screen.dart';
 import 'package:bs/sections/images/application/screen/images_screen.dart';
 import 'package:bs/sections/international_names/application/screen/international_names_screen.dart';
@@ -44,6 +45,10 @@ abstract class AppRouter {
       GoRoute(
         path: WordsScreen.route,
         builder: (context, state) => WordsScreen(),
+      ),
+      GoRoute(
+        path: CategorySettingsScreen.routeName,
+        builder: (context, state) => CategorySettingsScreen(args: state.extra as CategorySettingsArgs),
       ),
     ],
     errorBuilder: (context, state) => const _RouteNotFoundScreen(),
