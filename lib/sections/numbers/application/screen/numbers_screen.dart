@@ -2,7 +2,6 @@ import 'package:bs/base/application/screen/base_screen.dart';
 import 'package:bs/core/widgets/colors.dart';
 import 'package:bs/core/widgets/settings/category_settings_screen.dart';
 import 'package:bs/core/widgets/training/training_failure_view.dart';
-import 'package:bs/core/widgets/training/training_finished_view.dart';
 import 'package:bs/core/widgets/training/training_ready_room.dart';
 import 'package:bs/core/widgets/training/training_start_view.dart';
 import 'package:bs/sections/numbers/application/bloc/numbers_bloc.dart';
@@ -10,6 +9,7 @@ import 'package:bs/sections/numbers/application/bloc/numbers_event.dart';
 import 'package:bs/sections/numbers/application/bloc/numbers_state.dart';
 import 'package:bs/sections/numbers/application/screen/numbers_playing_view.dart';
 import 'package:bs/sections/numbers/application/screen/numbers_recall_view.dart';
+import 'package:bs/sections/training/application/screen/training_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -199,10 +199,7 @@ class NumbersScreen extends SingleBlocScreen<NumbersBloc> {
           recallSecondsElapsed: recallSecondsElapsed,
           submitted: submitted,
         ),
-      NumbersPhaseFinished(:final totalRecallSeconds) => TrainingFinishedView(
-          totalRecallSeconds: totalRecallSeconds,
-          onRestart: () => context.read<NumbersBloc>().add(const NumbersEventStartReadyRoom()),
-        ),
+      NumbersPhaseFinished() => TrainingScreen()
     };
   }
 
