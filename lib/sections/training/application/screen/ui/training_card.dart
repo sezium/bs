@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hoverables/hoverables.dart';
 import 'package:bs/core/widgets/colors.dart';
@@ -52,7 +53,7 @@ class TrainingCard extends StatelessWidget {
                     flex: 5,
                     child: assetsPath != null
                         ? Center(
-                            child: Image.asset(
+                            child: SvgPicture.asset(
                               assetsPath!,
                               fit: BoxFit.contain,
                             ),
