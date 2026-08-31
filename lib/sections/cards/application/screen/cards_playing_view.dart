@@ -20,11 +20,16 @@ class CardsPlayingView extends StatefulWidget {
     required this.cardSequence,
     required this.currentIndex,
     required this.secondsElapsed,
+    this.activeCount = 1,
   });
 
   final List<int> cardSequence;
   final int currentIndex;
   final int secondsElapsed;
+
+  /// Quante carte, a partire da [currentIndex], vengono mostrate
+  /// ingrandite/selezionate insieme (Settings > "Numero di carte attive").
+  final int activeCount;
 
   @override
   State<CardsPlayingView> createState() => _CardsPlayingViewState();
@@ -86,10 +91,22 @@ class _CardsPlayingViewState extends State<CardsPlayingView> {
     );
   }
 
+  /// Indici delle carte attualmente "attive" (ingrandite e selezionate),
+  /// a partire da [widget.currentIndex]. Con `activeCount == 1` (default)
+  /// è un solo indice, come prima di questa impostazione.
+  List<int> get _activeIndices {
+    final windowEnd = (widget.currentIndex + widget.activeCount).clamp(0, widget.cardSequence.length);
+    return [for (var i = widget.currentIndex; i < windowEnd; i++) i];
+  }
+
   Widget _buildContent() {
-    final card = widget.cardSequence[widget.currentIndex];
+    final activeIndices = _activeIndices;
     final isFirst = widget.currentIndex == 0;
     final bloc = context.read<CardsBloc>();
+
+    final rangeLabel = activeIndices.length > 1
+        ? 'Card ${activeIndices.first + 1}-${activeIndices.last + 1} / ${widget.cardSequence.length}'
+        : 'Card ${widget.currentIndex + 1} / ${widget.cardSequence.length}';
 
     return SizedBox.expand(
       child: Column(
@@ -98,7 +115,7 @@ class _CardsPlayingViewState extends State<CardsPlayingView> {
             title: 'Cards',
             color: BsColors.red,
             info: [
-              TrainingBarLabel('Card ${widget.currentIndex + 1} / ${widget.cardSequence.length}'),
+              TrainingBarLabel(rangeLabel),
               TrainingBarLabel(formatMinutesSeconds(widget.secondsElapsed)),
             ],
             actions: [
@@ -106,14 +123,7 @@ class _CardsPlayingViewState extends State<CardsPlayingView> {
             ],
           ),
           Expanded(
-            child: Center(
-              child: SizedBox(
-                key: ValueKey('card-box-$card'),
-                width: 200,
-                height: 300,
-                child: CardArt(cardIndex: card, width: 200, height: 300),
-              ),
-            ),
+            child: Center(child: _buildActiveCards(activeIndices)),
           ),
           _buildThumbnailRow(),
           const SizedBox(height: 16),
@@ -147,6 +157,34 @@ class _CardsPlayingViewState extends State<CardsPlayingView> {
     );
   }
 
+  /// Mostra le carte attive (1 o più, in base a `activeCount`) ingrandite
+  /// una accanto all'altra. Con una sola carta attiva la dimensione resta
+  /// 200x300 come prima; con più carte attive si riducono un po' per
+  /// stare affiancate senza uscire dallo schermo.
+  Widget _buildActiveCards(List<int> activeIndices) {
+    final multi = activeIndices.length > 1;
+    final cardWidth = multi ? 120.0 : 200.0;
+    final cardHeight = multi ? 180.0 : 300.0;
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          for (final idx in activeIndices) ...[
+            SizedBox(
+              key: ValueKey('card-box-${widget.cardSequence[idx]}'),
+              width: cardWidth,
+              height: cardHeight,
+              child: CardArt(cardIndex: widget.cardSequence[idx], width: cardWidth, height: cardHeight),
+            ),
+            if (idx != activeIndices.last) const SizedBox(width: 12),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildThumbnailRow() {
     return OverlappingStackGrid(
       itemCount: widget.cardSequence.length,
@@ -158,7 +196,9 @@ class _CardsPlayingViewState extends State<CardsPlayingView> {
   }
 
   Widget _buildThumb(int index) {
-    final isSelected = index == widget.currentIndex;
+    // Con "carte attive" > 1, tutte le carte nella finestra corrente
+    // risultano selezionate, non solo currentIndex.
+    final isSelected = _activeIndices.contains(index);
     final card = widget.cardSequence[index];
 
     return Transform.translate(

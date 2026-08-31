@@ -20,6 +20,11 @@ class CategorySettingsArgs {
     required this.defaultCount,
     this.minCount = 1,
     this.maxCount = 999,
+    this.secondaryCategoryId,
+    this.secondaryCountLabel,
+    this.secondaryDefaultCount,
+    this.secondaryMinCount = 1,
+    this.secondaryMaxCount = 999,
   });
 
   final String categoryId;
@@ -32,6 +37,16 @@ class CategorySettingsArgs {
   final int defaultCount;
   final int minCount;
   final int maxCount;
+
+  /// Seconda impostazione opzionale della categoria (es. per Cards:
+  /// "Numero di carte attive" durante la memorizzazione). Se
+  /// [secondaryCategoryId] è `null`, il secondo campo non viene mostrato:
+  /// questo lascia Numbers e le altre categorie invariate.
+  final String? secondaryCategoryId;
+  final String? secondaryCountLabel;
+  final int? secondaryDefaultCount;
+  final int secondaryMinCount;
+  final int secondaryMaxCount;
 }
 
 /// Pagina Settings comune a tutte le categorie di allenamento. Ogni
@@ -52,39 +67,73 @@ class _CategorySettingsScreenState extends State<CategorySettingsScreen> {
   late final CategorySettingsRepository _repository =
       BaseRepositoryManager.get<CategorySettingsRepository>();
   late final TextEditingController _controller;
+  TextEditingController? _secondaryController;
+
+  bool get _hasSecondary => widget.args.secondaryCategoryId != null;
 
   @override
   void initState() {
     super.initState();
     final stored = _repository.getItemCount(widget.args.categoryId);
     _controller = TextEditingController(text: stored?.toString() ?? '');
+
+    if (_hasSecondary) {
+      final storedSecondary = _repository.getItemCount(widget.args.secondaryCategoryId!);
+      _secondaryController = TextEditingController(text: storedSecondary?.toString() ?? '');
+    }
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _secondaryController?.dispose();
     super.dispose();
   }
 
   void _save() {
-    final text = _controller.text.trim();
-    if (text.isEmpty) {
-      // Campo vuoto = torna al default della sezione.
-      _repository.setItemCount(widget.args.categoryId, null);
-    } else {
-      final parsed = int.tryParse(text);
-      if (parsed != null) {
-        final clamped = parsed.clamp(widget.args.minCount, widget.args.maxCount);
-        _repository.setItemCount(widget.args.categoryId, clamped);
-      }
+    _saveField(
+      controller: _controller,
+      categoryId: widget.args.categoryId,
+      minCount: widget.args.minCount,
+      maxCount: widget.args.maxCount,
+    );
+    if (_hasSecondary) {
+      _saveField(
+        controller: _secondaryController!,
+        categoryId: widget.args.secondaryCategoryId!,
+        minCount: widget.args.secondaryMinCount,
+        maxCount: widget.args.secondaryMaxCount,
+      );
     }
     if (context.canPop()) {
       context.pop();
     }
   }
 
+  void _saveField({
+    required TextEditingController controller,
+    required String categoryId,
+    required int minCount,
+    required int maxCount,
+  }) {
+    final text = controller.text.trim();
+    if (text.isEmpty) {
+      // Campo vuoto = torna al default della sezione.
+      _repository.setItemCount(categoryId, null);
+    } else {
+      final parsed = int.tryParse(text);
+      if (parsed != null) {
+        final clamped = parsed.clamp(minCount, maxCount);
+        _repository.setItemCount(categoryId, clamped);
+      }
+    }
+  }
+
   void _resetToDefault() {
-    setState(() => _controller.clear());
+    setState(() {
+      _controller.clear();
+      _secondaryController?.clear();
+    });
   }
 
   @override
@@ -143,6 +192,40 @@ class _CategorySettingsScreenState extends State<CategorySettingsScreen> {
                       ),
                     ),
                   ),
+                  if (_hasSecondary) ...[
+                    const SizedBox(height: 24),
+                    Text(
+                      widget.args.secondaryCountLabel!,
+                      style: GoogleFonts.lato(fontSize: 16, fontWeight: FontWeight.bold, color: BsColors.black),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Lascia vuoto per usare il default (${widget.args.secondaryDefaultCount}).',
+                      style: GoogleFonts.lato(fontSize: 13, color: BsColors.grey),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _secondaryController,
+                      cursorColor: BsColors.black,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: InputDecoration(
+                        hintText: '${widget.args.secondaryDefaultCount}',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.zero,
+                          borderSide: BorderSide(color: BsColors.grey, width: 1),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.zero,
+                          borderSide: BorderSide(color: BsColors.grey, width: 1),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.zero,
+                          borderSide: BorderSide(color: color, width: 1),
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

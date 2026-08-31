@@ -2,6 +2,7 @@ import 'package:bs/base/application/screen/base_screen.dart';
 import 'package:bs/core/widgets/colors.dart';
 import 'package:bs/core/widgets/settings/category_settings_screen.dart';
 import 'package:bs/core/widgets/training/training_failure_view.dart';
+import 'package:bs/core/widgets/training/training_finished_view.dart';
 import 'package:bs/core/widgets/training/training_ready_room.dart';
 import 'package:bs/core/widgets/training/training_start_view.dart';
 import 'package:bs/sections/numbers/application/bloc/numbers_bloc.dart';
@@ -11,7 +12,6 @@ import 'package:bs/sections/numbers/application/screen/numbers_playing_view.dart
 import 'package:bs/sections/numbers/application/screen/numbers_recall_view.dart';
 import 'package:bs/sections/training/application/screen/training_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -103,12 +103,9 @@ class NumbersScreen extends SingleBlocScreen<NumbersBloc> {
   }
 
   Widget _buildInitView(BuildContext context) {
-    final bloc = context.read<NumbersBloc>();
-    final defaultCount = bloc.categorySettingsRepository.getItemCount(numbersCategoryId) ?? _defaultNumberCountFallback;
-    // Nessun testo pre-riempito: il campo può restare vuoto, in tal caso al
-    // tap di Start si userà il default (impostazioni o fallback).
-    final controller = TextEditingController();
-
+    // FIX: prima c'era anche un TextField qui, duplicato rispetto al campo
+    // "Numero di numeri" già presente in CategorySettingsScreen (Settings).
+    // Il conteggio va impostato solo lì: qui restava solo l'icona Settings.
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
@@ -117,11 +114,7 @@ class NumbersScreen extends SingleBlocScreen<NumbersBloc> {
           title: 'Numbers',
           imagePath: 'long/event_numbers_long.png',
           color: BsColors.blue,
-          onStart: () {
-            final text = controller.text.trim();
-            final count = text.isEmpty ? null : int.tryParse(text);
-            context.read<NumbersBloc>().add(NumbersEventStartReadyRoom(numberCount: count));
-          },
+          onStart: () => context.read<NumbersBloc>().add(const NumbersEventStartReadyRoom()),
           onSettingsTap: () => context.push(
             CategorySettingsScreen.routeName,
             extra: CategorySettingsArgs(
@@ -135,34 +128,6 @@ class NumbersScreen extends SingleBlocScreen<NumbersBloc> {
             ),
           ),
         ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: 100,
-          child: TextField(
-            controller: controller,
-            cursorColor: BsColors.black,
-            textAlign: TextAlign.center,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: InputDecoration(
-              hintText: '$defaultCount',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.zero,
-                borderSide: BorderSide(color: BsColors.grey, width: 1),
-              ),
-              enabledBorder: OutlineInputBorder(
-                     borderRadius: BorderRadius.zero,
-                borderSide: BorderSide(color: BsColors.grey, width: 1),
-              ),
-              focusedBorder: OutlineInputBorder(
-                     borderRadius: BorderRadius.zero,
-                borderSide: BorderSide(color: BsColors.grey, width: 1),
-              ),
-            ),
-       
-          ),
-        ),
-        
       ],
     );
   }

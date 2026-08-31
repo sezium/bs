@@ -7,10 +7,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 const int _readyRoomDuration = 3;
 const int _fullDeckSize = 52;
 const int _defaultCardCount = 52;
+const int _defaultActiveCount = 1;
 
 /// Stesso id passato a `CategorySettingsArgs.categoryId` nella schermata
 /// Cards: serve per leggere il conteggio salvato nelle Settings.
 const String cardsCategoryId = 'cards';
+
+/// Id della seconda impostazione, specifica di Cards: quante carte vengono
+/// mostrate ingrandite/selezionate insieme durante la sola fase di
+/// memorizzazione (Playing). Non tocca Numbers né la fase di recall.
+const String cardsActiveCountCategoryId = 'cards_active_count';
 
 final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependenciesMixin {
   Timer? _countdownTimer;
@@ -19,6 +25,11 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
   /// Quante carte del mazzo vengono effettivamente usate in questa
   /// sessione (un mazzo reale ha 52 carte uniche, quindi al massimo 52).
   int _cardCount = _defaultCardCount;
+
+  /// Quante carte vengono mostrate ingrandite/selezionate insieme durante
+  /// la memorizzazione (Settings > "Numero di carte attive"), sempre
+  /// clampato tra 1 e `_cardCount`.
+  int _activeCount = _defaultActiveCount;
 
   CardsBloc() : super(const CardsStateInit()) {
     on<CardsEventInit>(_onInit);
@@ -44,6 +55,11 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
     final resolvedCount =
         event.cardCount ?? categorySettingsRepository.getItemCount(cardsCategoryId) ?? _defaultCardCount;
     _cardCount = resolvedCount.clamp(1, _fullDeckSize); // un mazzo reale non supera le 52 carte
+
+    final resolvedActive =
+        categorySettingsRepository.getItemCount(cardsActiveCountCategoryId) ?? _defaultActiveCount;
+    _activeCount = resolvedActive.clamp(1, _cardCount); // non può superare le carte in gioco
+
     emit(const CardsStateSuccess(phase: CardsPhaseReadyRoom(secondsRemaining: _readyRoomDuration)));
 
     _countdownTimer?.cancel();
@@ -74,7 +90,12 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
     final sequence = (List.generate(_fullDeckSize, (i) => i)..shuffle()).take(_cardCount).toList();
 
     emit(CardsStateSuccess(
-      phase: CardsPhasePlaying(cardSequence: sequence, currentIndex: 0, recallSecondsElapsed: 0),
+      phase: CardsPhasePlaying(
+        cardSequence: sequence,
+        currentIndex: 0,
+        recallSecondsElapsed: 0,
+        activeCount: _activeCount,
+      ),
     ));
 
     _recallTimer?.cancel();
@@ -94,6 +115,7 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
           cardSequence: phase.cardSequence,
           currentIndex: phase.currentIndex,
           recallSecondsElapsed: phase.recallSecondsElapsed + 1,
+          activeCount: phase.activeCount,
         ),
       ));
     } else if (phase is CardsPhaseRecall && !phase.submitted) {
@@ -116,7 +138,8 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
     if (current is! CardsStateSuccess || current.phase is! CardsPhasePlaying) return;
 
     final phase = current.phase as CardsPhasePlaying;
-    final nextIndex = phase.currentIndex + 1;
+    // Avanza di un intero "blocco" di carte attive alla volta.
+    final nextIndex = phase.currentIndex + phase.activeCount;
 
     if (nextIndex >= phase.cardSequence.length) {
       _emitRecallPhase(
@@ -130,6 +153,7 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
           cardSequence: phase.cardSequence,
           currentIndex: nextIndex,
           recallSecondsElapsed: phase.recallSecondsElapsed,
+          activeCount: phase.activeCount,
         ),
       ));
     }
@@ -142,11 +166,14 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
     final phase = current.phase as CardsPhasePlaying;
     if (phase.currentIndex == 0) return;
 
+    final prevIndex = (phase.currentIndex - phase.activeCount).clamp(0, phase.cardSequence.length - 1);
+
     emit(CardsStateSuccess(
       phase: CardsPhasePlaying(
         cardSequence: phase.cardSequence,
-        currentIndex: phase.currentIndex - 1,
+        currentIndex: prevIndex,
         recallSecondsElapsed: phase.recallSecondsElapsed,
+        activeCount: phase.activeCount,
       ),
     ));
   }
@@ -161,6 +188,7 @@ final class CardsBloc extends Bloc<CardsEvent, CardsState> with CardsDependencie
         cardSequence: phase.cardSequence,
         currentIndex: 0,
         recallSecondsElapsed: phase.recallSecondsElapsed,
+        activeCount: phase.activeCount,
       ),
     ));
   }

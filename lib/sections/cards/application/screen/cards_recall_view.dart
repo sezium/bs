@@ -12,9 +12,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Fase di richiamo: l'utente ripiazza le carte dal mazzo negli slot nello
 /// stesso ordine in cui le ha viste. Riceve solo i dati della fase e legge
-/// il bloc dal context per dispatchare gli eventi: prima gli stessi
-/// callback venivano ricreati (e ripassati identici) nello switch dello
-/// screen, qui sono semplici `context.read<CardsBloc>().add(...)`.
+/// il bloc dal context per dispatchare gli eventi.
 class CardsRecallView extends StatefulWidget {
   const CardsRecallView({
     super.key,
@@ -36,8 +34,8 @@ class CardsRecallView extends StatefulWidget {
 }
 
 class _CardsRecallViewState extends State<CardsRecallView> {
-  static const double _slotWidth = 60;
-  static const double _slotHeight = 84;
+  static const double _slotWidth = 80;
+  static const double _slotHeight = 110;
   static const double _slotOverlap = 40;
 
   int _currentSlotIndex = 0;
@@ -62,41 +60,70 @@ class _CardsRecallViewState extends State<CardsRecallView> {
       _moveCurrentSlot(1);
       return true;
     }
+
     if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
       _moveCurrentSlot(-1);
       return true;
     }
+
     return false;
   }
 
   void _moveCurrentSlot(int delta) {
     final last = widget.placedSlots.length - 1;
-    setState(() => _currentSlotIndex = (_currentSlotIndex + delta).clamp(0, last));
+
+    setState(() {
+      _currentSlotIndex =
+          (_currentSlotIndex + delta).clamp(0, last);
+    });
   }
 
   void _onTapSlot(int slotIndex) {
     if (widget.submitted) return;
+
     if (widget.placedSlots[slotIndex] != null) {
-      context.read<CardsBloc>().add(CardsEventReturnCardToDeck(slotIndex: slotIndex));
+      context.read<CardsBloc>().add(
+        CardsEventReturnCardToDeck(
+          slotIndex: slotIndex,
+        ),
+      );
     }
-    setState(() => _currentSlotIndex = slotIndex);
+
+    setState(() {
+      _currentSlotIndex = slotIndex;
+    });
   }
 
   void _onTapDeckCard(int card) {
     if (widget.submitted) return;
     if (widget.placedSlots[_currentSlotIndex] != null) return;
 
-    context.read<CardsBloc>().add(CardsEventPlaceCard(card: card, slotIndex: _currentSlotIndex));
+    context.read<CardsBloc>().add(
+      CardsEventPlaceCard(
+        card: card,
+        slotIndex: _currentSlotIndex,
+      ),
+    );
 
     // Avanza automaticamente al prossimo slot vuoto, se presente.
-    final nextEmpty = widget.placedSlots.indexWhere((c) => c == null, _currentSlotIndex + 1);
-    final fallbackEmpty = nextEmpty != -1 ? nextEmpty : widget.placedSlots.indexWhere((c) => c == null);
-    if (fallbackEmpty != -1) setState(() => _currentSlotIndex = fallbackEmpty);
+    final nextEmpty = widget.placedSlots.indexWhere(
+      (c) => c == null,
+      _currentSlotIndex + 1,
+    );
+
+    final fallbackEmpty = nextEmpty != -1
+        ? nextEmpty
+        : widget.placedSlots.indexWhere((c) => c == null);
+
+    if (fallbackEmpty != -1) {
+      setState(() {
+        _currentSlotIndex = fallbackEmpty;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final allPlaced = !widget.placedSlots.contains(null);
     final bloc = context.read<CardsBloc>();
 
     return SizedBox.expand(
@@ -105,13 +132,20 @@ class _CardsRecallViewState extends State<CardsRecallView> {
           TrainingHighlightBar(
             title: 'Recall',
             color: BsColors.red,
-            info: [TrainingBarLabel(formatMinutesSeconds(widget.recallSecondsElapsed))],
-            // Il tasto "End" compare solo dopo la conferma: prima era
-            // sempre visibile e chiamava context.pop() invece di chiudere
-            // davvero la sessione.
+            info: [
+              TrainingBarLabel(
+                formatMinutesSeconds(widget.recallSecondsElapsed),
+              ),
+            ],
             actions: [
               if (widget.submitted)
-                bsButton(title: 'End', color: BsColors.red, onTap: () => bloc.add(const CardsEventFinishRecall())),
+                bsButton(
+                  title: 'End',
+                  color: BsColors.red,
+                  onTap: () => bloc.add(
+                    const CardsEventFinishRecall(),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 16),
@@ -131,11 +165,16 @@ class _CardsRecallViewState extends State<CardsRecallView> {
           ),
           if (!widget.submitted)
             Padding(
-              padding: const EdgeInsets.only(bottom: 16, top: 8),
+              padding: const EdgeInsets.only(
+                bottom: 16,
+                top: 8,
+              ),
               child: bsButton(
                 title: 'Confirm',
                 color: BsColors.red,
-                onTap: allPlaced ? () => bloc.add(const CardsEventConfirmRecall()) : () {},
+                onTap: () => bloc.add(
+                  const CardsEventConfirmRecall(),
+                ),
               ),
             ),
         ],
@@ -156,28 +195,29 @@ class _CardsRecallViewState extends State<CardsRecallView> {
   Widget _buildSlot(int slotIndex) {
     final placedCard = widget.placedSlots[slotIndex];
     final isCurrent = slotIndex == _currentSlotIndex;
-    final isCorrect = widget.submitted && placedCard != null && placedCard == widget.originalSequence[slotIndex];
-    final isWrong = widget.submitted && placedCard != null && !isCorrect;
 
-    Color background;
+    final isCorrect = widget.submitted &&
+        placedCard != null &&
+        placedCard == widget.originalSequence[slotIndex];
+
+    Color overlayColor;
     Color borderColor;
 
     if (widget.submitted) {
       if (isCorrect) {
-        background = BsColors.green.withValues(alpha: 0.35);
+        overlayColor = BsColors.green.withValues(alpha: 0.35);
         borderColor = BsColors.green;
-      } else if (isWrong) {
-        background = BsColors.red.withValues(alpha: 0.35);
-        borderColor = BsColors.red;
       } else {
-        background = BsColors.white;
-        borderColor = BsColors.grey;
+        overlayColor = BsColors.red.withValues(alpha: 0.35);
+        borderColor = BsColors.red;
       }
     } else if (isCurrent) {
-      background = placedCard == null ? BsColors.red.withValues(alpha: 0.25) : Colors.white;
+      overlayColor = placedCard == null
+          ? BsColors.red.withValues(alpha: 0.25)
+          : Colors.transparent;
       borderColor = BsColors.red;
     } else {
-      background = Colors.white;
+      overlayColor = Colors.transparent;
       borderColor = BsColors.grey;
     }
 
@@ -187,11 +227,30 @@ class _CardsRecallViewState extends State<CardsRecallView> {
         width: _slotWidth,
         height: _slotHeight,
         decoration: BoxDecoration(
-          color: background,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: borderColor, width: 1),
+          border: Border.all(
+            color: borderColor,
+            width: 1,
+          ),
         ),
-        child: placedCard != null ? CardArt(cardIndex: placedCard) : const SizedBox.shrink(),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Carta.
+            if (placedCard != null)
+              CardArt(cardIndex: placedCard),
+
+            // Overlay sopra la carta.
+            if (overlayColor != Colors.transparent)
+              Container(
+                decoration: BoxDecoration(
+                  color: overlayColor,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -203,7 +262,8 @@ class _CardsRecallViewState extends State<CardsRecallView> {
       itemHeight: _slotHeight,
       overlap: _slotOverlap,
       rowSpacing: 16,
-      itemBuilder: (context, deckIndex) => _buildDeckCard(widget.deck[deckIndex]),
+      itemBuilder: (context, deckIndex) =>
+          _buildDeckCard(widget.deck[deckIndex]),
     );
   }
 
@@ -216,7 +276,10 @@ class _CardsRecallViewState extends State<CardsRecallView> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: BsColors.grey, width: 1),
+          border: Border.all(
+            color: BsColors.grey,
+            width: 1,
+          ),
         ),
         child: CardArt(cardIndex: card),
       ),

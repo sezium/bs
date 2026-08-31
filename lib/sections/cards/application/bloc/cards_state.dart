@@ -34,10 +34,17 @@ final class CardsPhasePlaying extends CardsPhase {
     required this.cardSequence,
     required this.currentIndex,
     required this.recallSecondsElapsed,
+    this.activeCount = 1,
   });
   final List<int> cardSequence;
   final int currentIndex;
   final int recallSecondsElapsed;
+
+  /// Quante carte vengono mostrate ingrandite/selezionate insieme durante
+  /// la memorizzazione (nuova impostazione "Numero di carte attive",
+  /// valida solo in questa fase). Con 1 (default) il comportamento è
+  /// identico a prima: una sola carta alla volta.
+  final int activeCount;
 }
 
 final class CardsPhaseFinished extends CardsPhase {

@@ -19,6 +19,11 @@ class CardArt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // FIX: mancava il prefisso 'assets/' richiesto dal path dichiarato in
+    // pubspec.yaml ('assets/'). La chiave generata da Flutter per ogni file
+    // è il path completo dal root del progetto (es. 'assets/cards/card0.svg'),
+    // quindi 'cards/card0.svg' non veniva mai trovato: in release (APK) il
+    // fallback silenzioso di flutter_svg lasciava lo spazio vuoto/bianco.
     return SvgPicture.asset('cards/card$cardIndex.svg', width: width, height: height, fit: fit);
   }
 }

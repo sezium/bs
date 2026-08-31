@@ -2,6 +2,7 @@ import 'package:bs/base/application/screen/base_screen.dart';
 import 'package:bs/core/widgets/colors.dart';
 import 'package:bs/core/widgets/settings/category_settings_screen.dart';
 import 'package:bs/core/widgets/training/training_failure_view.dart';
+import 'package:bs/core/widgets/training/training_finished_view.dart';
 import 'package:bs/core/widgets/training/training_ready_room.dart';
 import 'package:bs/core/widgets/training/training_start_view.dart';
 import 'package:bs/sections/cards/application/bloc/cards_bloc.dart';
@@ -17,6 +18,10 @@ import 'package:go_router/go_router.dart';
 /// Default usato quando l'utente non ha ancora scelto nulla nelle Settings
 /// (un mazzo reale ha al massimo 52 carte).
 const int _defaultCardCountFallback = 52;
+
+/// Default per la nuova impostazione "Numero di carte attive": una sola
+/// carta alla volta, come comportamento preesistente.
+const int _defaultActiveCountFallback = 1;
 
 class CardsScreen extends SingleBlocScreen<CardsBloc> {
   CardsScreen({super.key}) : super(bloc: CardsBloc());
@@ -56,6 +61,14 @@ class CardsScreen extends SingleBlocScreen<CardsBloc> {
               defaultCount: _defaultCardCountFallback,
               minCount: 1,
               maxCount: 52,
+              // Nuova impostazione, solo per Cards: quante carte vengono
+              // mostrate ingrandite/selezionate insieme durante la sola
+              // fase di memorizzazione (non tocca il recall).
+              secondaryCategoryId: cardsActiveCountCategoryId,
+              secondaryCountLabel: 'Numero di carte attive (memorizzazione)',
+              secondaryDefaultCount: _defaultActiveCountFallback,
+              secondaryMinCount: 1,
+              secondaryMaxCount: 52,
             ),
           ),
         ),
@@ -73,11 +86,18 @@ class CardsScreen extends SingleBlocScreen<CardsBloc> {
           secondsRemaining: secondsRemaining,
           onSkip: () => context.read<CardsBloc>().add(const CardsEventReadyRoomFinished()),
         ),
-      CardsPhasePlaying(:final cardSequence, :final currentIndex, :final recallSecondsElapsed) => CardsPlayingView(
+      CardsPhasePlaying(
+        :final cardSequence,
+        :final currentIndex,
+        :final recallSecondsElapsed,
+        :final activeCount,
+      ) =>
+        CardsPlayingView(
           key: const ValueKey('playing-view'),
           cardSequence: cardSequence,
           currentIndex: currentIndex,
           secondsElapsed: recallSecondsElapsed,
+          activeCount: activeCount,
         ),
       CardsPhaseRecall(
         :final originalSequence,
@@ -93,8 +113,7 @@ class CardsScreen extends SingleBlocScreen<CardsBloc> {
           recallSecondsElapsed: recallSecondsElapsed,
           submitted: submitted,
         ),
-      CardsPhaseFinished() => TrainingScreen(),
- 
+      CardsPhaseFinished() => TrainingScreen()
     };
   }
 

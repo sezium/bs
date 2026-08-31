@@ -110,7 +110,6 @@ class _NumbersRecallViewState extends State<NumbersRecallView> {
 
   @override
   Widget build(BuildContext context) {
-    final allFilled = !widget.placedSlots.contains(null);
     final bloc = context.read<NumbersBloc>();
 
     return SizedBox.expand(
@@ -135,7 +134,7 @@ class _NumbersRecallViewState extends State<NumbersRecallView> {
               child: bsButton(
                 title: 'Confirm',
                 color: BsColors.blue,
-                onTap: allFilled ? () => bloc.add(const NumbersEventConfirmRecall()) : () {},
+                onTap: () => bloc.add(const NumbersEventConfirmRecall()),
               ),
             ),
         ],
@@ -159,7 +158,8 @@ class _NumbersRecallViewState extends State<NumbersRecallView> {
  Widget _buildSlot(int slotIndex) {
     final placedNumber = widget.placedSlots[slotIndex];
     final isCorrect = widget.submitted && placedNumber != null && placedNumber == widget.originalSequence[slotIndex];
-    final isWrong = widget.submitted && placedNumber != null && !isCorrect;
+    // FIX: uno slot lasciato vuoto (null) al submit va segnato come errato.
+    final isWrong = widget.submitted && !isCorrect;
 
     Color background;
     Color borderColor;
