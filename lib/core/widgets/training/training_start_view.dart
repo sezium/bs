@@ -1,9 +1,7 @@
-import 'package:bs/core/extentions/build_context_extention.dart';
 import 'package:bs/core/widgets/button.dart';
 import 'package:bs/core/widgets/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Schermata iniziale generica di una sezione di allenamento: titolo,
 /// immagine e pulsante "Start". Ogni sezione (Cards, Numbers, ...) passa
@@ -57,7 +55,7 @@ class TrainingStartView extends StatelessWidget {
                 constraints: const BoxConstraints(
                   maxHeight: 150, // You can adjust this value as needed
                 ),
-                child: SvgPicture.asset(
+                child: Image.asset(
                   imagePath,
                   fit: BoxFit.contain,
                 ),

@@ -1,4 +1,3 @@
-import 'package:bs/core/extentions/build_context_extention.dart';
 import 'package:bs/core/format.dart';
 import 'package:bs/core/widgets/button.dart';
 import 'package:bs/core/widgets/colors.dart';
@@ -9,7 +8,6 @@ import 'package:bs/sections/numbers/application/screen/numbers_art.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Mostra il numero corrente al centro, i numeri ancora da leggere a
 /// sinistra e quelli già usciti a destra. Rettangoli di grandezza fissa,

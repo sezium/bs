@@ -53,7 +53,7 @@ class TrainingCard extends StatelessWidget {
                     flex: 5,
                     child: assetsPath != null
                         ? Center(
-                            child: SvgPicture.asset(
+                            child: Image.asset(
                               assetsPath!,
                               fit: BoxFit.contain,
                             ),
